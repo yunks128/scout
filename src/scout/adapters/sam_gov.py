@@ -14,7 +14,7 @@ from scout.storage.db import Notice
 
 log = logging.getLogger(__name__)
 
-SEARCH_URL = "https://api.sam.gov/opportunities/v2/search"
+SEARCH_URL = "https://api.sam.gov/prod/opportunities/v2/search"
 
 
 class SamGovAdapter(Adapter):
@@ -31,14 +31,22 @@ class SamGovAdapter(Adapter):
             return
         end = datetime.utcnow()
         start = end - timedelta(days=self.lookback_days)
-        # SAM.gov accepts one NAICS code per request; we iterate codes rather than
-        # passing a comma-separated list (not officially supported in v2).
         naics_codes = [n["code"] for n in naics_psc()["naics"]]
         with httpx.Client(timeout=30.0) as client:
             for ncode in naics_codes:
-                yield from self._paginate(client, start, end, ncode)
+                stop, hits = self._paginate(client, start, end, ncode)
+                yield from hits
+                if stop:
+                    # Hard stop: a 429 against one NAICS means we're over quota.
+                    # Continuing would just burn more requests.
+                    log.warning("SAM.gov quota exhausted; stopping all ingestion")
+                    return
 
-    def _paginate(self, client: httpx.Client, start, end, ncode: str) -> Iterator[tuple[str, dict]]:
+    def _paginate(
+        self, client: httpx.Client, start, end, ncode: str
+    ) -> tuple[bool, list[tuple[str, dict]]]:
+        """Return (hard_stop, results). hard_stop=True on 429 so the outer loop bails."""
+        out: list[tuple[str, dict]] = []
         offset = 0
         while True:
             params = {
@@ -51,25 +59,25 @@ class SamGovAdapter(Adapter):
             }
             r = client.get(SEARCH_URL, params=params)
             if r.status_code == 429:
-                log.warning("SAM.gov rate limited on NAICS %s; moving on", ncode)
-                return
+                log.warning("SAM.gov 429 on NAICS %s", ncode)
+                return True, out
             if r.status_code == 404:
-                return
+                return False, out
             r.raise_for_status()
             data = r.json()
             hits = data.get("opportunitiesData") or []
             if not hits:
-                return
+                return False, out
             for hit in hits:
                 nid = hit.get("noticeId") or hit.get("solicitationNumber")
                 if not nid:
                     continue
                 self._enrich_description(client, hit)
-                yield str(nid), hit
+                out.append((str(nid), hit))
             total = data.get("totalRecords", 0)
             offset += len(hits)
             if offset >= total:
-                return
+                return False, out
 
     def _enrich_description(self, client: httpx.Client, hit: dict[str, Any]) -> None:
         """SAM.gov returns a link in `description`, not the text. Fetch the text

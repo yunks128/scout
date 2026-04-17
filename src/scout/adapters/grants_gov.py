@@ -29,10 +29,11 @@ class GrantsGovAdapter(Adapter):
 
     def fetch(self) -> Iterator[tuple[str, dict]]:
         with httpx.Client(timeout=30.0) as client:
-            for page in range(self.max_pages):
+            offset = 0
+            for _ in range(self.max_pages):
                 body = {
                     "rows": self.rows_per_page,
-                    "offset": page * self.rows_per_page,
+                    "offset": offset,
                     "oppStatuses": "forecasted|posted",
                     "fundingCategories": "|".join(FUNDING_CATEGORIES),
                     "agencies": "|".join(AGENCY_CODES),
@@ -40,8 +41,9 @@ class GrantsGovAdapter(Adapter):
                 }
                 r = client.post(SEARCH_URL, json=body)
                 r.raise_for_status()
-                data = r.json()
-                hits = data.get("data", {}).get("oppHits") or []
+                data = (r.json() or {}).get("data", {}) or {}
+                hits = data.get("oppHits") or []
+                hit_count = int(data.get("hitCount") or 0)
                 if not hits:
                     return
                 for hit in hits:
@@ -49,7 +51,8 @@ class GrantsGovAdapter(Adapter):
                     if not nid:
                         continue
                     yield nid, hit
-                if len(hits) < self.rows_per_page:
+                offset += len(hits)
+                if offset >= hit_count or len(hits) < self.rows_per_page:
                     return
 
     def normalize(self, notice_id: str, payload: dict[str, Any], content_hash: str) -> Notice | None:
