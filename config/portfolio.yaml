@@ -1,0 +1,29 @@
+# Strategic-fit context fed to the LLM classifier. Keep this tight — it's in the
+# system prompt on every classification call, so verbosity = $$.
+
+organization: "JPL (FFRDC)"
+
+focus_areas:
+  - Grid resilience and security, especially under extreme weather and cyber-physical threats
+  - AI/ML for power systems (foundation models, physics-informed ML, digital twins)
+  - Space-power / lunar-surface-power / radiation-hard power electronics
+  - Advanced energy storage systems and power conversion
+  - Autonomous control and anomaly detection for grid and microgrid operation
+  - Industrial decarbonization sensing and verification
+  - Nuclear and fusion diagnostics instrumentation
+
+current_workstreams:
+  - JEME (multi-agent AI platform)
+  - FAIMM
+  - MMGIS
+
+eligibility_posture: |
+  JPL is a federally funded R&D center operated by Caltech for NASA. Many DOE
+  FOAs restrict FFRDC primes or require an FFRDC-partner model. Treat FFRDC
+  eligibility as a hard gate: if the FOA excludes FFRDCs without a partner
+  pathway, mark as 'archive' regardless of technical fit.
+
+preferred_roles:
+  - Prime when eligible and technically leading
+  - Subcontractor to a university or industry prime for FFRDC-restricted FOAs
+  - Team member on multi-institution consortia

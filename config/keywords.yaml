@@ -1,0 +1,51 @@
+# Lexical gate vocabulary. Each keyword contributes its weight to the lexical score
+# when it appears in title or description. Re-mine quarterly from recent DOE/NSF
+# awards and USAspending.gov.
+
+core:
+  - { term: "grid resilience", weight: 3 }
+  - { term: "grid modernization", weight: 3 }
+  - { term: "energy storage", weight: 3 }
+  - { term: "battery", weight: 2 }
+  - { term: "power electronics", weight: 3 }
+  - { term: "microgrid", weight: 3 }
+  - { term: "inverter", weight: 2 }
+  - { term: "substation", weight: 2 }
+  - { term: "transmission", weight: 2 }
+  - { term: "distribution system", weight: 2 }
+  - { term: "smart grid", weight: 2 }
+  - { term: "demand response", weight: 2 }
+  - { term: "electric vehicle", weight: 1 }
+  - { term: "EV charging", weight: 2 }
+  - { term: "photovoltaic", weight: 2 }
+  - { term: "wind energy", weight: 2 }
+  - { term: "geothermal", weight: 2 }
+  - { term: "nuclear", weight: 2 }
+  - { term: "small modular reactor", weight: 3 }
+  - { term: "fusion", weight: 2 }
+  - { term: "hydrogen", weight: 2 }
+  - { term: "carbon capture", weight: 2 }
+  - { term: "industrial decarbonization", weight: 3 }
+
+ai_for_energy:
+  - { term: "foundation model", weight: 3 }
+  - { term: "AI for energy", weight: 3 }
+  - { term: "machine learning", weight: 1 }
+  - { term: "digital twin", weight: 2 }
+  - { term: "physics-informed", weight: 2 }
+  - { term: "autonomous control", weight: 2 }
+  - { term: "anomaly detection", weight: 1 }
+  - { term: "predictive maintenance", weight: 2 }
+
+agency_signals:
+  - { term: "DE-FOA", weight: 2 }
+  - { term: "ARPA-E", weight: 2 }
+  - { term: "GENESIS", weight: 5 }
+  - { term: "Genesis Mission", weight: 5 }
+  - { term: "Earthshot", weight: 3 }
+
+exclusions:
+  # If any of these appear AND no core term appears, skip.
+  - "healthcare"
+  - "pharmaceutical"
+  - "agriculture"
