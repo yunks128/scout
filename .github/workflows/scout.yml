@@ -2,7 +2,7 @@ name: scout
 
 on:
   schedule:
-    - cron: "0 */4 * * *"   # every 4 hours, UTC
+    - cron: "0 13 * * *"   # daily at 13:00 UTC (09:00 ET / 06:00 PT)
   workflow_dispatch:
     inputs:
       include_archive:
