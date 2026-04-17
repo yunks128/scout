@@ -1,0 +1,242 @@
+from __future__ import annotations
+
+import html
+import json
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
+
+from scout.storage.db import DB
+
+LANES = ("act-now", "review", "archive")
+LANE_LABEL = {"act-now": "Act now", "review": "Review", "archive": "Archive"}
+
+
+def build(db: DB, out_dir: str | Path = "site") -> Path:
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    rows = _all_rows(db)
+    counts = _counts(rows)
+    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    sources = sorted({r["source"] for r in rows})
+    html_doc = _render_index(rows, counts, generated, sources)
+    index = out / "index.html"
+    index.write_text(html_doc)
+    return index
+
+
+def _all_rows(db: DB) -> list[sqlite3.Row]:
+    with db.connect() as conn:
+        return list(
+            conn.execute(
+                "SELECT n.*, c.lane, c.lexical_score, c.lexical_matches, c.llm_relevance, "
+                "c.llm_themes, c.llm_fit_notes, c.ffrdc_eligible, c.cost_share, "
+                "c.foreign_entity, c.eligibility_quote "
+                "FROM notices n JOIN classifications c USING(source, notice_id, content_hash) "
+                "ORDER BY CASE c.lane "
+                "  WHEN 'act-now' THEN 0 WHEN 'review' THEN 1 ELSE 2 END, "
+                "n.response_deadline ASC"
+            )
+        )
+
+
+def _counts(rows: list[sqlite3.Row]) -> dict[str, int]:
+    out = {lane: 0 for lane in LANES}
+    for r in rows:
+        out[r["lane"]] = out.get(r["lane"], 0) + 1
+    return out
+
+
+def _render_index(rows, counts, generated: str, sources: list[str]) -> str:
+    cards_actnow = "\n".join(_card(r) for r in rows if r["lane"] == "act-now")
+    cards_review = "\n".join(_card(r) for r in rows if r["lane"] == "review")
+    archive_rows = "\n".join(_archive_row(r) for r in rows if r["lane"] == "archive")
+    actnow_section = cards_actnow or '<p class="empty">No opportunities in this lane.</p>'
+    review_section = cards_review or '<p class="empty">No opportunities in this lane.</p>'
+    archive_section = (
+        f"<details><summary>Show {counts['archive']} archived notices</summary>"
+        f"<table class='archive'><thead><tr><th>ID</th><th>Source</th><th>Title</th>"
+        f"<th>Deadline</th><th>Score</th></tr></thead><tbody>{archive_rows}</tbody></table></details>"
+        if archive_rows
+        else ""
+    )
+    sources_str = ", ".join(sources) or "(none yet)"
+    return _PAGE.format(
+        generated=html.escape(generated),
+        sources=html.escape(sources_str),
+        c_actnow=counts["act-now"],
+        c_review=counts["review"],
+        c_archive=counts["archive"],
+        total=sum(counts.values()),
+        actnow=actnow_section,
+        review=review_section,
+        archive=archive_section,
+    )
+
+
+def _card(r: sqlite3.Row) -> str:
+    themes = json.loads(r["llm_themes"] or "[]")
+    matches = json.loads(r["lexical_matches"] or "[]")
+    theme_pills = "".join(f'<span class="pill">{html.escape(t)}</span>' for t in themes[:6])
+    match_pills = "".join(f'<span class="pill pill-lex">{html.escape(m)}</span>' for m in matches[:8])
+    ffrdc = r["ffrdc_eligible"] or "unclear"
+    rel = r["llm_relevance"]
+    rel_str = f"{rel}/10" if rel is not None else "—"
+    deadline = r["response_deadline"] or "—"
+    posted = r["posted_date"] or "—"
+    agency = r["agency"] or "unknown"
+    notes = html.escape(r["llm_fit_notes"] or "")
+    quote = html.escape(r["eligibility_quote"] or "")
+    url = r["url"] or "#"
+    return f"""
+<article class="card lane-{html.escape(r['lane'])}">
+  <header>
+    <span class="badge badge-ffrdc badge-{html.escape(ffrdc)}">FFRDC: {html.escape(ffrdc)}</span>
+    <span class="badge badge-rel">Relevance {rel_str}</span>
+    <span class="badge badge-source">{html.escape(r['source'])}</span>
+  </header>
+  <h3><a href="{html.escape(url)}" target="_blank" rel="noopener">{html.escape(r['title'])}</a></h3>
+  <p class="meta">
+    <strong>{html.escape(r['notice_id'])}</strong> · {html.escape(agency)}<br>
+    Posted {html.escape(posted)} · <strong>Deadline {html.escape(deadline)}</strong>
+  </p>
+  {f'<p class="notes">{notes}</p>' if notes else ''}
+  {f'<div class="pills">{theme_pills}</div>' if theme_pills else ''}
+  {f'<div class="pills lex">{match_pills}</div>' if match_pills else ''}
+  {f'<blockquote class="elig">{quote}</blockquote>' if quote else ''}
+</article>
+""".strip()
+
+
+def _archive_row(r: sqlite3.Row) -> str:
+    rel = r["llm_relevance"]
+    rel_str = f"{rel}/10" if rel is not None else "—"
+    url = r["url"] or "#"
+    title = html.escape(r["title"] or "")
+    return (
+        f"<tr><td><code>{html.escape(r['notice_id'])}</code></td>"
+        f"<td>{html.escape(r['source'])}</td>"
+        f'<td><a href="{html.escape(url)}" target="_blank" rel="noopener">{title}</a></td>'
+        f"<td>{html.escape(r['response_deadline'] or '—')}</td>"
+        f"<td>{rel_str}</td></tr>"
+    )
+
+
+_PAGE = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scout — Power & Energy Funding</title>
+<style>
+:root {{
+  --bg: #0d1117;
+  --panel: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+  --warn: #d29922;
+  --danger: #f85149;
+  --ok: #3fb950;
+  --chip: #1f2937;
+}}
+* {{ box-sizing: border-box; }}
+body {{
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}}
+header.site {{
+  padding: 2rem 1.25rem 1rem;
+  border-bottom: 1px solid var(--border);
+}}
+header.site h1 {{ margin: 0; font-size: 1.75rem; letter-spacing: -0.02em; }}
+header.site p.sub {{ margin: .25rem 0 0; color: var(--muted); font-size: .9rem; }}
+.counts {{ display: flex; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--panel); }}
+.count {{ display: flex; flex-direction: column; }}
+.count .num {{ font-size: 1.5rem; font-weight: 600; }}
+.count .lbl {{ font-size: .75rem; text-transform: uppercase; color: var(--muted); letter-spacing: .05em; }}
+.count.actnow .num {{ color: var(--danger); }}
+.count.review .num {{ color: var(--warn); }}
+.count.archive .num {{ color: var(--muted); }}
+main {{ max-width: 1080px; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }}
+section {{ margin-bottom: 2.5rem; }}
+section h2 {{
+  font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em;
+  border-bottom: 1px solid var(--border); padding-bottom: .5rem; margin-bottom: 1rem;
+}}
+.card {{
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}}
+.card.lane-act-now {{ border-left: 4px solid var(--danger); }}
+.card.lane-review {{ border-left: 4px solid var(--warn); }}
+.card header {{ display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .5rem; }}
+.card h3 {{ margin: .25rem 0 .5rem; font-size: 1.05rem; font-weight: 600; line-height: 1.3; }}
+.card h3 a {{ color: var(--accent); text-decoration: none; }}
+.card h3 a:hover {{ text-decoration: underline; }}
+.card .meta {{ color: var(--muted); font-size: .85rem; margin: .25rem 0 .75rem; }}
+.card .notes {{ margin: .5rem 0; font-size: .95rem; }}
+.card blockquote.elig {{
+  margin: .75rem 0 0; padding: .5rem .75rem;
+  border-left: 3px solid var(--border);
+  color: var(--muted); font-size: .85rem; background: rgba(255,255,255,.02);
+}}
+.badge {{ font-size: .7rem; padding: .15rem .5rem; border-radius: 10px; background: var(--chip); border: 1px solid var(--border); }}
+.badge-ffrdc.badge-yes {{ background: rgba(63,185,80,.15); color: var(--ok); border-color: var(--ok); }}
+.badge-ffrdc.badge-as_partner {{ background: rgba(88,166,255,.15); color: var(--accent); border-color: var(--accent); }}
+.badge-ffrdc.badge-no {{ background: rgba(248,81,73,.15); color: var(--danger); border-color: var(--danger); }}
+.badge-ffrdc.badge-unclear {{ background: rgba(210,153,34,.15); color: var(--warn); border-color: var(--warn); }}
+.badge-rel {{ color: var(--accent); }}
+.badge-source {{ font-family: ui-monospace, monospace; }}
+.pills {{ display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .5rem; }}
+.pill {{ font-size: .75rem; padding: .1rem .5rem; background: var(--chip); border-radius: 10px; color: var(--text); }}
+.pill-lex {{ opacity: .7; font-family: ui-monospace, monospace; }}
+.empty {{ color: var(--muted); font-style: italic; }}
+details {{ margin-top: 1rem; }}
+details summary {{ cursor: pointer; color: var(--muted); }}
+table.archive {{ width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: .85rem; }}
+table.archive th, table.archive td {{ padding: .4rem .5rem; border-bottom: 1px solid var(--border); text-align: left; }}
+table.archive th {{ color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; font-size: .7rem; }}
+table.archive code {{ font-size: .8rem; color: var(--muted); }}
+footer {{ max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem; color: var(--muted); font-size: .8rem; border-top: 1px solid var(--border); }}
+footer a {{ color: var(--accent); }}
+</style>
+</head>
+<body>
+<header class="site">
+  <h1>Scout</h1>
+  <p class="sub">Early-warning for power &amp; energy funding opportunities · generated {generated} · sources: {sources}</p>
+</header>
+<div class="counts">
+  <div class="count actnow"><span class="num">{c_actnow}</span><span class="lbl">Act now</span></div>
+  <div class="count review"><span class="num">{c_review}</span><span class="lbl">Review</span></div>
+  <div class="count archive"><span class="num">{c_archive}</span><span class="lbl">Archive</span></div>
+  <div class="count total"><span class="num">{total}</span><span class="lbl">Total classified</span></div>
+</div>
+<main>
+  <section>
+    <h2>Act now</h2>
+    {actnow}
+  </section>
+  <section>
+    <h2>Review</h2>
+    {review}
+  </section>
+  <section>
+    <h2>Archive</h2>
+    {archive}
+  </section>
+</main>
+<footer>
+  Scout · <a href="https://github.com/yunks128/scout">GitHub</a> · Monitoring SAM.gov, Grants.gov, and DOE Office of Science.
+</footer>
+</body>
+</html>
+"""

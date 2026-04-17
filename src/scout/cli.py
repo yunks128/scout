@@ -10,6 +10,7 @@ from scout.adapters.sam_gov import SamGovAdapter
 from scout.alerting.digest import write_digest
 from scout.pipeline import classify_unclassified
 from scout.storage.db import DB
+from scout.web.generate import build as build_site
 
 ADAPTERS = {
     "grants.gov": GrantsGovAdapter,
@@ -58,9 +59,18 @@ def digest(include_archive: bool, out_dir: str) -> None:
 
 
 @main.command()
+@click.option("--out", "out_dir", default="site")
+def web(out_dir: str) -> None:
+    """Generate the static site (index.html) from the current DB."""
+    db = DB()
+    path = build_site(db, out_dir=out_dir)
+    click.echo(str(path))
+
+
+@main.command()
 @click.option("--source", "sources", multiple=True, type=click.Choice(list(ADAPTERS)))
 def run(sources: tuple[str, ...]) -> None:
-    """Convenience: ingest + classify + digest in one call."""
+    """Convenience: ingest + classify + digest + web in one call."""
     db = DB()
     chosen = sources or tuple(ADAPTERS.keys())
     for name in chosen:
@@ -68,5 +78,5 @@ def run(sources: tuple[str, ...]) -> None:
         click.echo(f"[{name}] total={total} new_or_amended={new}")
     seen, llm = classify_unclassified(db)
     click.echo(f"classified seen={seen} llm_calls={llm}")
-    path = write_digest(db)
-    click.echo(str(path))
+    click.echo(str(write_digest(db)))
+    click.echo(str(build_site(db)))

@@ -13,6 +13,7 @@ data/*
 !data/scout.db
 dist/
 build/
+site/
 .pytest_cache/
 .ruff_cache/
 .coverage
