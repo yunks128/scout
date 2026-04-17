@@ -51,10 +51,18 @@ jobs:
           git add data/scout.db docs/digest_*.md
           if git diff --cached --quiet; then
             echo "No changes to commit"
-          else
-            git commit -m "scout: digest $(date -u +%Y-%m-%dT%H:%MZ)"
-            git push
+            exit 0
           fi
+          git commit -m "scout: digest $(date -u +%Y-%m-%dT%H:%MZ)"
+          # Retry with rebase to survive concurrent pushes (manual dev pushes,
+          # other scout-bot runs, etc.). Three attempts is plenty.
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push attempt $attempt failed; rebasing and retrying"
+            git pull --rebase origin main
+          done
+          echo "Push failed after 3 attempts" >&2
+          exit 1
 
       - name: Upload digest artifact
         uses: actions/upload-artifact@v4
