@@ -127,7 +127,7 @@ _PAGE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scout — Power & Energy Funding</title>
+<title>SCOUT — Solicitation &amp; Call Opportunity Understanding Tool</title>
 <style>
 :root {{
   --bg: #0d1117;
@@ -153,7 +153,8 @@ header.site {{
   padding: 2rem 1.25rem 1rem;
   border-bottom: 1px solid var(--border);
 }}
-header.site h1 {{ margin: 0; font-size: 1.75rem; letter-spacing: -0.02em; }}
+header.site h1 {{ margin: 0; font-size: 1.75rem; letter-spacing: 0.12em; font-weight: 700; }}
+header.site p.expansion {{ margin: .15rem 0 .25rem; color: var(--text); font-size: 1rem; font-weight: 500; }}
 header.site p.sub {{ margin: .25rem 0 0; color: var(--muted); font-size: .9rem; }}
 .counts {{ display: flex; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--panel); }}
 .count {{ display: flex; flex-direction: column; }}
@@ -211,7 +212,8 @@ footer a {{ color: var(--accent); }}
 </head>
 <body>
 <header class="site">
-  <h1>Scout</h1>
+  <h1>SCOUT</h1>
+  <p class="expansion">Solicitation &amp; Call Opportunity Understanding Tool</p>
   <p class="sub">Early-warning for power &amp; energy funding opportunities · generated {generated} · sources: {sources}</p>
 </header>
 <div class="counts">
@@ -235,7 +237,7 @@ footer a {{ color: var(--accent); }}
   </section>
 </main>
 <footer>
-  Scout · <a href="https://github.com/yunks128/scout">GitHub</a> · Monitoring SAM.gov, Grants.gov, and DOE Office of Science.
+  SCOUT · <a href="https://github.com/yunks128/scout">GitHub</a> · Monitoring SAM.gov, Grants.gov, and DOE Office of Science.
 </footer>
 </body>
 </html>
