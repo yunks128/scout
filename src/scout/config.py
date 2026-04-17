@@ -29,4 +29,4 @@ def portfolio() -> dict:
 
 
 def llm_model() -> str:
-    return os.environ.get("SCOUT_LLM_MODEL", "claude-haiku-4-5-20251001")
+    return os.environ.get("SCOUT_LLM_MODEL", "gemini-2.5-flash")

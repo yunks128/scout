@@ -36,7 +36,7 @@ jobs:
 
       - name: Ingest + classify + digest
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SAM_GOV_API_KEY: ${{ secrets.SAM_GOV_API_KEY }}
           SCOUT_DB_PATH: data/scout.db
         run: |

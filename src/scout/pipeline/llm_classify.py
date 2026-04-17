@@ -5,8 +5,9 @@ import logging
 import os
 from dataclasses import dataclass
 
-import anthropic
 import yaml
+from google import genai
+from google.genai import types
 
 from scout.config import llm_model, portfolio
 
@@ -65,11 +66,17 @@ class LLMVerdict:
     lane: str
 
 
-def _client() -> anthropic.Anthropic:
-    key = os.environ.get("ANTHROPIC_API_KEY")
-    if not key:
-        raise RuntimeError("ANTHROPIC_API_KEY not set")
-    return anthropic.Anthropic(api_key=key)
+_client_cache: genai.Client | None = None
+
+
+def _client() -> genai.Client:
+    global _client_cache
+    if _client_cache is None:
+        key = os.environ.get("GEMINI_API_KEY")
+        if not key:
+            raise RuntimeError("GEMINI_API_KEY not set")
+        _client_cache = genai.Client(api_key=key)
+    return _client_cache
 
 
 def classify(
@@ -94,16 +101,17 @@ def classify(
         url=url or "",
         description=desc or "(no description available)",
     )
-    resp = _client().messages.create(
+    resp = _client().models.generate_content(
         model=llm_model(),
-        max_tokens=1024,
-        system=[
-            {"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}},
-        ],
-        messages=[{"role": "user", "content": user_msg}],
+        contents=user_msg,
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            response_mime_type="application/json",
+            temperature=0.2,
+            max_output_tokens=1024,
+        ),
     )
-    text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
-    data = _parse_json(text)
+    data = _parse_json(resp.text or "")
     return LLMVerdict(
         relevance_score=int(data.get("relevance_score", 0)),
         matched_themes=list(data.get("matched_themes") or []),

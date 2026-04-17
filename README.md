@@ -7,7 +7,7 @@ Early-warning system for power and energy funding opportunities. Monitors SAM.go
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-cp .env.example .env  # fill in ANTHROPIC_API_KEY and SAM_GOV_API_KEY
+cp .env.example .env  # fill in GEMINI_API_KEY and SAM_GOV_API_KEY
 
 scout ingest     # pull latest from all sources
 scout classify   # run lexical gate + LLM relevance pass
@@ -30,7 +30,7 @@ Five stages, each swappable:
 
 1. **Ingestion** — one adapter per source writes raw payloads to `raw_notices`
 2. **Normalization** — canonical schema keyed by `(source, notice_id)` with amendment hash
-3. **Relevance** — cheap lexical gate (keywords + NAICS/PSC) then Haiku classifier for gate-passers
+3. **Relevance** — cheap lexical gate (keywords + NAICS/PSC) then Gemini 2.5 Flash classifier for gate-passers
 4. **Eligibility** — FFRDC yes/no/partner/unclear, cost share, foreign entity restrictions
 5. **Alerting** — three lanes (act-now / review / archive) as markdown digest
 
