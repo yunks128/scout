@@ -17,5 +17,3 @@ build/
 .ruff_cache/
 .coverage
 .DS_Store
-digest_*.md
-!digest_example.md
