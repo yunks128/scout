@@ -20,6 +20,10 @@ SEARCH_URL = "https://api.sam.gov/prod/opportunities/v2/search"
 class SamGovAdapter(Adapter):
     source = "sam.gov"
 
+    # Narrow NAICS set to the highest-signal codes only. With an SI-NONFED role
+    # and a shared daily quota, we cannot afford 14 requests per run × 6 runs.
+    CORE_NAICS = ["541715", "221118", "221121"]
+
     def __init__(self, lookback_days: int = 30, page_size: int = 100) -> None:
         self.lookback_days = lookback_days
         self.page_size = page_size
@@ -31,14 +35,11 @@ class SamGovAdapter(Adapter):
             return
         end = datetime.utcnow()
         start = end - timedelta(days=self.lookback_days)
-        naics_codes = [n["code"] for n in naics_psc()["naics"]]
         with httpx.Client(timeout=30.0) as client:
-            for ncode in naics_codes:
+            for ncode in self.CORE_NAICS:
                 stop, hits = self._paginate(client, start, end, ncode)
                 yield from hits
                 if stop:
-                    # Hard stop: a 429 against one NAICS means we're over quota.
-                    # Continuing would just burn more requests.
                     log.warning("SAM.gov quota exhausted; stopping all ingestion")
                     return
 

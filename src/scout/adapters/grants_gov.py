@@ -19,6 +19,15 @@ FUNDING_CATEGORIES = ["ENG", "ST", "EN"]
 # Agencies that actually post energy R&D work.
 AGENCY_CODES = ["DOE", "DOD", "NSF", "DARPA", "USDA-NIFA", "NASA"]
 
+# Keyword filter applied server-side by Grants.gov's Search2. This narrows the
+# broad ENG|ST|EN funding categories from ~200 generic engineering notices down
+# to ~100 energy/power-adjacent ones that are worth the lexical-gate + LLM pass.
+KEYWORD_FILTER = (
+    "energy OR grid OR power OR nuclear OR hydrogen OR battery OR storage "
+    "OR solar OR wind OR geothermal OR microgrid OR inverter OR photovoltaic "
+    "OR decarbonization OR fusion OR transmission OR substation"
+)
+
 
 class GrantsGovAdapter(Adapter):
     source = "grants.gov"
@@ -37,6 +46,7 @@ class GrantsGovAdapter(Adapter):
                     "oppStatuses": "forecasted|posted",
                     "fundingCategories": "|".join(FUNDING_CATEGORIES),
                     "agencies": "|".join(AGENCY_CODES),
+                    "keyword": KEYWORD_FILTER,
                     "sortBy": "openDate|desc",
                 }
                 r = client.post(SEARCH_URL, json=body)
