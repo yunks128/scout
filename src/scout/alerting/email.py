@@ -60,6 +60,8 @@ def send_daily(db: DB, only_if_changes: bool = True) -> SendResult:
         r = client.post(BUTTONDOWN_API, json=payload, headers=headers)
         if r.status_code == 401:
             return SendResult(sent=False, reason="Buttondown auth rejected (check API key)")
-        r.raise_for_status()
+        if r.status_code >= 400:
+            log.error("Buttondown %s: %s", r.status_code, r.text[:1000])
+            r.raise_for_status()
         data = r.json()
     return SendResult(sent=True, reason="ok", email_id=data.get("id"))
