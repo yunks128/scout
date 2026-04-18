@@ -4,7 +4,8 @@ import html
 import json
 import os
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 from scout.storage.db import DB
@@ -18,7 +19,7 @@ def build(db: DB, out_dir: str | Path = "site") -> Path:
     out.mkdir(parents=True, exist_ok=True)
     rows = _all_rows(db)
     counts = _counts(rows)
-    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    generated = datetime.now(ZoneInfo("America/Los_Angeles")).strftime("%Y-%m-%d %H:%M %Z")
     sources = sorted({r["source"] for r in rows})
     html_doc = _render_index(rows, counts, generated, sources)
     index = out / "index.html"
