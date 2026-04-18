@@ -154,17 +154,43 @@ class DB:
             )
 
     def digest_rows(self, lanes: Iterable[str]) -> list[sqlite3.Row]:
-        placeholders = ",".join(["?"] * len(list(lanes)))
         lanes = list(lanes)
+        placeholders = ",".join(["?"] * len(lanes))
         with self.connect() as conn:
             return list(
                 conn.execute(
                     f"SELECT n.*, c.* FROM notices n "
                     f"JOIN classifications c USING(source, notice_id, content_hash) "
+                    f"JOIN (SELECT source, notice_id, MAX(last_seen_at) AS latest "
+                    f"      FROM notices GROUP BY source, notice_id) latest "
+                    f"  ON n.source=latest.source "
+                    f" AND n.notice_id=latest.notice_id "
+                    f" AND n.last_seen_at=latest.latest "
                     f"WHERE c.lane IN ({placeholders}) "
                     f"ORDER BY CASE c.lane "
                     f"  WHEN 'act-now' THEN 0 WHEN 'review' THEN 1 ELSE 2 END, "
                     f"n.response_deadline ASC",
                     lanes,
+                )
+            )
+
+    def latest_rows(self) -> list[sqlite3.Row]:
+        """All notices deduplicated to the most recent content_hash per (source, notice_id)."""
+        with self.connect() as conn:
+            return list(
+                conn.execute(
+                    "SELECT n.*, c.lane, c.lexical_score, c.lexical_matches, c.llm_relevance, "
+                    "c.llm_themes, c.llm_fit_notes, c.ffrdc_eligible, c.cost_share, "
+                    "c.foreign_entity, c.eligibility_quote "
+                    "FROM notices n "
+                    "JOIN classifications c USING(source, notice_id, content_hash) "
+                    "JOIN (SELECT source, notice_id, MAX(last_seen_at) AS latest "
+                    "      FROM notices GROUP BY source, notice_id) latest "
+                    "  ON n.source=latest.source "
+                    " AND n.notice_id=latest.notice_id "
+                    " AND n.last_seen_at=latest.latest "
+                    "ORDER BY CASE c.lane "
+                    "  WHEN 'act-now' THEN 0 WHEN 'review' THEN 1 ELSE 2 END, "
+                    "n.response_deadline ASC"
                 )
             )

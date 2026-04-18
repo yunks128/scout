@@ -26,18 +26,10 @@ def build(db: DB, out_dir: str | Path = "site") -> Path:
 
 
 def _all_rows(db: DB) -> list[sqlite3.Row]:
-    with db.connect() as conn:
-        return list(
-            conn.execute(
-                "SELECT n.*, c.lane, c.lexical_score, c.lexical_matches, c.llm_relevance, "
-                "c.llm_themes, c.llm_fit_notes, c.ffrdc_eligible, c.cost_share, "
-                "c.foreign_entity, c.eligibility_quote "
-                "FROM notices n JOIN classifications c USING(source, notice_id, content_hash) "
-                "ORDER BY CASE c.lane "
-                "  WHEN 'act-now' THEN 0 WHEN 'review' THEN 1 ELSE 2 END, "
-                "n.response_deadline ASC"
-            )
-        )
+    # Dedup on (source, notice_id) by taking the latest content_hash — this is
+    # what makes an amendment visible as one card with updated info rather than
+    # three historical snapshots of the same FOA.
+    return db.latest_rows()
 
 
 def _counts(rows: list[sqlite3.Row]) -> dict[str, int]:
