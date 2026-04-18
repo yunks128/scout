@@ -55,7 +55,12 @@ def send_daily(db: DB, only_if_changes: bool = True) -> SendResult:
         # delivery to confirmed subscribers.
         "status": "about_to_send",
     }
-    headers = {"Authorization": f"Token {api_key}"}
+    headers = {
+        "Authorization": f"Token {api_key}",
+        # Required once per API key to acknowledge that status='about_to_send'
+        # will actually deliver email rather than sit as a draft.
+        "X-Buttondown-Live-Dangerously": "true",
+    }
     with httpx.Client(timeout=30.0) as client:
         r = client.post(BUTTONDOWN_API, json=payload, headers=headers)
         if r.status_code == 401:
