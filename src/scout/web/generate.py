@@ -178,6 +178,7 @@ header.site {{
   border-bottom: 1px solid var(--border);
 }}
 header.site h1 {{ margin: 0; font-size: 1.75rem; letter-spacing: 0.12em; font-weight: 700; }}
+header.site p.affiliation {{ margin: 0 0 .35rem; font-size: .7rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }}
 header.site p.expansion {{ margin: .15rem 0 .25rem; color: var(--text); font-size: 1rem; font-weight: 500; }}
 header.site p.sub {{ margin: .25rem 0 0; color: var(--muted); font-size: .9rem; }}
 .counts {{ display: flex; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--panel); }}
@@ -234,6 +235,8 @@ table.archive em {{ font-style: normal; color: var(--muted); font-size: .7rem; m
 .muted {{ color: var(--muted); font-style: italic; }}
 footer {{ max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem; color: var(--muted); font-size: .8rem; border-top: 1px solid var(--border); }}
 footer a {{ color: var(--accent); }}
+footer p {{ margin: .5rem 0; }}
+footer p.legal {{ font-size: .7rem; line-height: 1.4; opacity: .75; }}
 .subscribe {{ background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-top: 1rem; }}
 .subscribe h2 {{ border: 0; margin: 0 0 .5rem; font-size: 1rem; text-transform: uppercase; letter-spacing: .08em; }}
 .subscribe p {{ margin: .25rem 0 .75rem; color: var(--muted); font-size: .9rem; }}
@@ -246,6 +249,7 @@ footer a {{ color: var(--accent); }}
 </head>
 <body>
 <header class="site">
+  <p class="affiliation">JPL · Section 345</p>
   <h1>SCOUT</h1>
   <p class="expansion">Solicitation &amp; Call Opportunity Understanding Tool</p>
   <p class="sub">Power systems funding opportunities, surfaced and ranked daily · generated {generated} · sources: {sources}</p>
@@ -272,7 +276,20 @@ footer a {{ color: var(--accent); }}
   {subscribe}
 </main>
 <footer>
-  SCOUT · Monitoring SAM.gov, Grants.gov, and DOE Office of Science.
+  <p>SCOUT · Monitoring SAM.gov, Grants.gov, and DOE Office of Science.</p>
+  <p class="legal">
+    Copyright 2026, by the California Institute of Technology. ALL RIGHTS RESERVED.
+    United States Government Sponsorship acknowledged. Any commercial use must be
+    negotiated with the Office of Technology Transfer at the California Institute
+    of Technology.
+  </p>
+  <p class="legal">
+    This software may be subject to U.S. export control laws. By accepting this
+    software, the user agrees to comply with all applicable U.S. export laws and
+    regulations. User has the responsibility to obtain export licenses, or other
+    export authority as may be required before exporting such information to
+    foreign countries or providing access to foreign persons.
+  </p>
 </footer>
 </body>
 </html>
