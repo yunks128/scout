@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from scout.pipeline import eligibility, lexical_gate, llm_classify
+from scout.pipeline import eligibility, lane, lexical_gate, llm_classify
 from scout.storage.db import DB, Classification
 
 log = logging.getLogger(__name__)
@@ -60,6 +60,11 @@ def classify_unclassified(db: DB) -> tuple[int, int]:
             log.exception("LLM classify failed for %s/%s", row["source"], row["notice_id"])
             continue
         quote = verdict.eligibility_quote or eligibility.extract_ffrdc_quote(row["description"])
+        assigned_lane = lane.compute_lane(
+            ffrdc_eligible=verdict.ffrdc_eligible,
+            relevance_score=verdict.relevance_score,
+            response_deadline=row["response_deadline"],
+        )
         db.save_classification(
             Classification(
                 source=row["source"],
@@ -74,7 +79,7 @@ def classify_unclassified(db: DB) -> tuple[int, int]:
                 cost_share=verdict.cost_share,
                 foreign_entity=verdict.foreign_entity,
                 eligibility_quote=quote,
-                lane=verdict.lane,
+                lane=assigned_lane,
             )
         )
     return seen, llm_calls
