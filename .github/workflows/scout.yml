@@ -47,6 +47,10 @@ jobs:
           scout -v digest ${{ github.event.inputs.include_archive == 'true' && '--include-archive' || '' }}
 
       - name: Email digest via Buttondown
+        # Only the daily scheduled cron sends real email. Manual triggers
+        # (workflow_dispatch) stop at the digest + Pages deploy so we can
+        # iterate on content without waking subscribers up.
+        if: ${{ github.event_name == 'schedule' }}
         env:
           BUTTONDOWN_API_KEY: ${{ secrets.BUTTONDOWN_API_KEY }}
           SCOUT_DB_PATH: data/scout.db

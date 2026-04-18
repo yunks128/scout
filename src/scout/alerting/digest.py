@@ -23,24 +23,34 @@ def render(db: DB, include_archive: bool = False) -> str:
         lines.append("_No classified opportunities in act-now or review lanes._")
         return "\n".join(lines) + "\n"
 
-    counts = {lane: 0 for lane in lanes}
-    for r in rows:
-        counts[r["lane"]] = counts.get(r["lane"], 0) + 1
-    lines.append(
-        " · ".join(f"**{lane}**: {counts.get(lane, 0)}" for lane in lanes)
-    )
+    counts = lane_counts(rows, lanes)
+    lines.append(" · ".join(f"**{lane}**: {counts.get(lane, 0)}" for lane in lanes))
     lines.append("")
+    lines.extend(render_cards(rows, lanes))
+    return "\n".join(lines) + "\n"
 
+
+def render_cards(rows, lanes) -> list[str]:
+    """Just the per-lane card markdown, no top header or counter line.
+    Used both by the file digest and by the email sender so they stay aligned."""
+    out: list[str] = []
     for lane in lanes:
         subset = [r for r in rows if r["lane"] == lane]
         if not subset:
             continue
-        lines.append(LANE_HEADERS[lane])
-        lines.append("")
+        out.append(LANE_HEADERS[lane])
+        out.append("")
         for r in subset:
-            lines.extend(_format_row(r, verbose=(lane != "archive")))
-            lines.append("")
-    return "\n".join(lines) + "\n"
+            out.extend(_format_row(r, verbose=(lane != "archive")))
+            out.append("")
+    return out
+
+
+def lane_counts(rows, lanes) -> dict[str, int]:
+    counts = {lane: 0 for lane in lanes}
+    for r in rows:
+        counts[r["lane"]] = counts.get(r["lane"], 0) + 1
+    return counts
 
 
 def _format_row(r, verbose: bool) -> list[str]:
