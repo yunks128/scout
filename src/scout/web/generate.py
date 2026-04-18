@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -63,7 +64,29 @@ def _render_index(rows, counts, generated: str, sources: list[str]) -> str:
         actnow=actnow_section,
         review=review_section,
         archive=archive_section,
+        subscribe=_subscribe_block(),
     )
+
+
+def _subscribe_block() -> str:
+    user = os.environ.get("SCOUT_BUTTONDOWN_USER", "").strip()
+    if not user:
+        return ""
+    action = f"https://buttondown.email/api/emails/embed-subscribe/{html.escape(user)}"
+    public_url = f"https://buttondown.email/{html.escape(user)}"
+    return f"""
+<section class="subscribe">
+  <h2>Subscribe to the daily digest</h2>
+  <p>Get this page's act-now and review lanes in your inbox each morning. Skips empty days.</p>
+  <form action="{action}" method="post" target="popupwindow"
+        onsubmit="window.open('{public_url}', 'popupwindow')" class="embeddable-buttondown-form">
+    <input type="email" name="email" placeholder="you@example.com" required>
+    <input type="hidden" value="1" name="embed">
+    <button type="submit">Subscribe</button>
+  </form>
+  <p class="fineprint">Delivered via <a href="{public_url}" target="_blank" rel="noopener">Buttondown</a>. Unsubscribe any time from the email footer.</p>
+</section>
+""".strip()
 
 
 def _card(r: sqlite3.Row) -> str:
@@ -200,6 +223,14 @@ table.archive th {{ color: var(--muted); font-weight: 500; text-transform: upper
 table.archive code {{ font-size: .8rem; color: var(--muted); }}
 footer {{ max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem; color: var(--muted); font-size: .8rem; border-top: 1px solid var(--border); }}
 footer a {{ color: var(--accent); }}
+.subscribe {{ background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-top: 1rem; }}
+.subscribe h2 {{ border: 0; margin: 0 0 .5rem; font-size: 1rem; text-transform: uppercase; letter-spacing: .08em; }}
+.subscribe p {{ margin: .25rem 0 .75rem; color: var(--muted); font-size: .9rem; }}
+.subscribe form {{ display: flex; gap: .5rem; flex-wrap: wrap; }}
+.subscribe input[type=email] {{ flex: 1; min-width: 220px; padding: .5rem .75rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; font-size: .95rem; }}
+.subscribe button {{ padding: .5rem 1rem; background: var(--accent); color: var(--bg); border: 0; border-radius: 6px; font-weight: 600; cursor: pointer; }}
+.subscribe button:hover {{ filter: brightness(1.1); }}
+.subscribe .fineprint {{ font-size: .75rem; margin-top: .5rem; }}
 </style>
 </head>
 <body>
@@ -227,6 +258,7 @@ footer a {{ color: var(--accent); }}
     <h2>Archive</h2>
     {archive}
   </section>
+  {subscribe}
 </main>
 <footer>
   SCOUT · <a href="https://github.com/yunks128/scout">GitHub</a> · Monitoring SAM.gov, Grants.gov, and DOE Office of Science.

@@ -46,6 +46,12 @@ jobs:
           scout -v classify
           scout -v digest ${{ github.event.inputs.include_archive == 'true' && '--include-archive' || '' }}
 
+      - name: Email digest via Buttondown
+        env:
+          BUTTONDOWN_API_KEY: ${{ secrets.BUTTONDOWN_API_KEY }}
+          SCOUT_DB_PATH: data/scout.db
+        run: scout -v email
+
       - name: Commit DB and digest
         run: |
           git config user.name "scout-bot"
@@ -98,6 +104,7 @@ jobs:
       - name: Generate site
         env:
           SCOUT_DB_PATH: data/scout.db
+          SCOUT_BUTTONDOWN_USER: ${{ vars.SCOUT_BUTTONDOWN_USER }}
         run: scout web --out site
 
       - uses: actions/configure-pages@v5

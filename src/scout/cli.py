@@ -8,6 +8,7 @@ from scout.adapters.doe_sc import DoeScAdapter
 from scout.adapters.grants_gov import GrantsGovAdapter
 from scout.adapters.sam_gov import SamGovAdapter
 from scout.alerting.digest import write_digest
+from scout.alerting.email import send_daily
 from scout.pipeline import classify_unclassified
 from scout.storage.db import DB
 from scout.web.generate import build as build_site
@@ -65,6 +66,18 @@ def web(out_dir: str) -> None:
     db = DB()
     path = build_site(db, out_dir=out_dir)
     click.echo(str(path))
+
+
+@main.command()
+@click.option("--always", is_flag=True, help="Send even when no act-now or review items.")
+def email(always: bool) -> None:
+    """Send today's digest to Buttondown subscribers. No-op without BUTTONDOWN_API_KEY."""
+    db = DB()
+    result = send_daily(db, only_if_changes=not always)
+    if result.sent:
+        click.echo(f"email sent id={result.email_id}")
+    else:
+        click.echo(f"email skipped: {result.reason}")
 
 
 @main.command()
