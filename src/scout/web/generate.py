@@ -126,15 +126,23 @@ def _card(r: sqlite3.Row) -> str:
 
 def _archive_row(r: sqlite3.Row) -> str:
     rel = r["llm_relevance"]
-    rel_str = f"{rel}/10" if rel is not None else "—"
+    lex = r["lexical_score"] if r["lexical_score"] is not None else 0.0
+    if rel is not None:
+        score_str = f"{rel}/10"
+    else:
+        # No LLM score: item failed the lexical gate. Showing the raw lexical
+        # score (even 0.0) is more honest than '—' and hints at why it archived.
+        score_str = f'<span title="Lexical score — failed the gate, so no LLM call">{lex:.1f} <em>lex</em></span>'
+    deadline = r["response_deadline"] or ""
+    deadline_str = html.escape(deadline) if deadline else '<span class="muted">Rolling</span>'
     url = r["url"] or "#"
     title = html.escape(r["title"] or "")
     return (
         f"<tr><td><code>{html.escape(r['notice_id'])}</code></td>"
         f"<td>{html.escape(r['source'])}</td>"
         f'<td><a href="{html.escape(url)}" target="_blank" rel="noopener">{title}</a></td>'
-        f"<td>{html.escape(r['response_deadline'] or '—')}</td>"
-        f"<td>{rel_str}</td></tr>"
+        f"<td>{deadline_str}</td>"
+        f"<td>{score_str}</td></tr>"
     )
 
 
@@ -222,6 +230,8 @@ table.archive {{ width: 100%; border-collapse: collapse; margin-top: 1rem; font-
 table.archive th, table.archive td {{ padding: .4rem .5rem; border-bottom: 1px solid var(--border); text-align: left; }}
 table.archive th {{ color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; font-size: .7rem; }}
 table.archive code {{ font-size: .8rem; color: var(--muted); }}
+table.archive em {{ font-style: normal; color: var(--muted); font-size: .7rem; margin-left: .15rem; }}
+.muted {{ color: var(--muted); font-style: italic; }}
 footer {{ max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem; color: var(--muted); font-size: .8rem; border-top: 1px solid var(--border); }}
 footer a {{ color: var(--accent); }}
 .subscribe {{ background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-top: 1rem; }}
