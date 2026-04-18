@@ -12,6 +12,7 @@ from scout.storage.db import Notice
 log = logging.getLogger(__name__)
 
 SEARCH_URL = "https://api.grants.gov/v1/api/search2"
+FETCH_URL = "https://api.grants.gov/v1/api/fetchOpportunity"
 
 # Grants.gov funding category codes that cover power/energy broadly.
 FUNDING_CATEGORIES = ["ENG", "ST", "EN"]
@@ -63,10 +64,35 @@ class GrantsGovAdapter(Adapter):
                     nid = str(hit.get("id") or hit.get("number") or "")
                     if not nid:
                         continue
+                    self._enrich_detail(client, nid, hit)
                     yield nid, hit
                 offset += len(hits)
                 if offset >= hit_count or len(hits) < self.rows_per_page:
                     return
+
+    def _enrich_detail(self, client: httpx.Client, opp_id: str, hit: dict[str, Any]) -> None:
+        """Pull the full synopsis via fetchOpportunity — Search2 only returns a summary.
+        Silently skip on failure; the LLM will just see the thin summary."""
+        try:
+            r = client.post(FETCH_URL, json={"opportunityId": int(opp_id)}, timeout=30.0)
+            if r.status_code != 200:
+                return
+            data = (r.json() or {}).get("data") or {}
+            synopsis = data.get("synopsis") or {}
+        except (ValueError, httpx.HTTPError):
+            log.debug("grants.gov detail fetch failed for %s", opp_id, exc_info=True)
+            return
+        hit["_detail"] = {
+            "synopsisDesc": synopsis.get("synopsisDesc") or "",
+            "applicantTypes": synopsis.get("applicantTypes") or [],
+            "applicantEligibilityDesc": synopsis.get("applicantEligibilityDesc") or "",
+            "costSharing": synopsis.get("costSharing"),
+            "agencyName": synopsis.get("agencyName"),
+            "awardCeiling": synopsis.get("awardCeiling"),
+            "awardFloor": synopsis.get("awardFloor"),
+        }
+        if not hit.get("agencyName") and synopsis.get("agencyName"):
+            hit["agencyName"] = synopsis.get("agencyName")
 
     def normalize(self, notice_id: str, payload: dict[str, Any], content_hash: str) -> Notice | None:
         title = payload.get("title") or ""
@@ -78,9 +104,36 @@ class GrantsGovAdapter(Adapter):
             content_hash=content_hash,
             title=title,
             agency=payload.get("agencyName") or payload.get("agencyCode"),
-            description=payload.get("description"),
+            description=_compose_description(payload),
             posted_date=payload.get("openDate"),
             response_deadline=payload.get("closeDate"),
             url=f"https://www.grants.gov/search-results-detail/{notice_id}",
             last_modified=payload.get("lastUpdatedDate"),
         )
+
+
+def _compose_description(payload: dict[str, Any]) -> str:
+    """Merge Search2 summary with fetchOpportunity detail so the LLM gets the
+    full synopsis plus structured eligibility/cost-share hints."""
+    detail = payload.get("_detail") or {}
+    parts: list[str] = []
+    syn_desc = detail.get("synopsisDesc") or ""
+    if syn_desc:
+        parts.append(syn_desc)
+    elif payload.get("description"):
+        parts.append(str(payload["description"]))
+
+    eligibility_bits: list[str] = []
+    types = detail.get("applicantTypes") or []
+    if types:
+        labels = [t.get("description") or t.get("id") for t in types if isinstance(t, dict)]
+        eligibility_bits.append("Applicant types: " + "; ".join(str(x) for x in labels if x))
+    elig_desc = detail.get("applicantEligibilityDesc") or ""
+    if elig_desc:
+        eligibility_bits.append("Additional eligibility: " + elig_desc)
+    cost = detail.get("costSharing")
+    if cost is not None:
+        eligibility_bits.append(f"Cost sharing required: {bool(cost)}")
+    if eligibility_bits:
+        parts.append("\n".join(eligibility_bits))
+    return "\n\n".join(parts).strip()
