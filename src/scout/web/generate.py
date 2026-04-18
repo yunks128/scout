@@ -261,7 +261,7 @@ footer a {{ color: var(--accent); }}
   {subscribe}
 </main>
 <footer>
-  SCOUT · <a href="https://github.com/yunks128/scout">GitHub</a> · Monitoring SAM.gov, Grants.gov, and DOE Office of Science.
+  SCOUT · Monitoring SAM.gov, Grants.gov, and DOE Office of Science.
 </footer>
 </body>
 </html>
