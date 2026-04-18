@@ -67,6 +67,10 @@ class DB:
         schema = files("scout.storage").joinpath("schema.sql").read_text()
         with self.connect() as conn:
             conn.executescript(schema)
+            cols = {r[1] for r in conn.execute("PRAGMA table_info(alerts_sent)")}
+            if "lane" not in cols:
+                conn.execute("DROP TABLE alerts_sent")
+                conn.executescript(schema)
 
     @contextmanager
     def connect(self):
@@ -153,9 +157,31 @@ class DB:
                 ),
             )
 
-    def digest_rows(self, lanes: Iterable[str]) -> list[sqlite3.Row]:
+    def digest_rows(
+        self,
+        lanes: Iterable[str],
+        new_only: bool = False,
+        channel: str = "email",
+    ) -> list[sqlite3.Row]:
+        """Return the latest-hash row for each notice in the given lanes.
+
+        When new_only is True, rows already recorded in alerts_sent with the
+        same (source, notice_id, content_hash, lane, channel) are excluded —
+        so a reclassification re-surfaces the item even if the content didn't
+        change.
+        """
         lanes = list(lanes)
         placeholders = ",".join(["?"] * len(lanes))
+        params: list = list(lanes)
+        dedup_clause = ""
+        if new_only:
+            dedup_clause = (
+                " AND NOT EXISTS (SELECT 1 FROM alerts_sent a "
+                "  WHERE a.source=n.source AND a.notice_id=n.notice_id "
+                "    AND a.content_hash=n.content_hash AND a.lane=c.lane "
+                "    AND a.channel=?)"
+            )
+            params.append(channel)
         with self.connect() as conn:
             return list(
                 conn.execute(
@@ -166,12 +192,26 @@ class DB:
                     f"  ON n.source=latest.source "
                     f" AND n.notice_id=latest.notice_id "
                     f" AND n.last_seen_at=latest.latest "
-                    f"WHERE c.lane IN ({placeholders}) "
+                    f"WHERE c.lane IN ({placeholders}){dedup_clause} "
                     f"ORDER BY CASE c.lane "
                     f"  WHEN 'act-now' THEN 0 WHEN 'review' THEN 1 ELSE 2 END, "
                     f"n.response_deadline ASC",
-                    lanes,
+                    params,
                 )
+            )
+
+    def record_alerts_sent(self, rows: Iterable, channel: str) -> None:
+        """Mark rows as delivered so subsequent new_only digests exclude them."""
+        now = _now()
+        with self.connect() as conn:
+            conn.executemany(
+                "INSERT OR IGNORE INTO alerts_sent("
+                " source, notice_id, content_hash, lane, channel, sent_at"
+                ") VALUES(?,?,?,?,?,?)",
+                [
+                    (r["source"], r["notice_id"], r["content_hash"], r["lane"], channel, now)
+                    for r in rows
+                ],
             )
 
     def latest_rows(self) -> list[sqlite3.Row]:

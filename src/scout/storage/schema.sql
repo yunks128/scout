@@ -59,11 +59,15 @@ CREATE TABLE IF NOT EXISTS classifications (
 
 CREATE INDEX IF NOT EXISTS idx_class_lane ON classifications(lane);
 
+-- One row per (notice-version, lane, channel) that has been delivered. Lane is
+-- part of the key so a reclassification (e.g. review → act-now) without a
+-- content_hash change re-alerts.
 CREATE TABLE IF NOT EXISTS alerts_sent (
     source        TEXT    NOT NULL,
     notice_id     TEXT    NOT NULL,
     content_hash  TEXT    NOT NULL,
+    lane          TEXT    NOT NULL,
     channel       TEXT    NOT NULL,
     sent_at       TEXT    NOT NULL,
-    PRIMARY KEY (source, notice_id, content_hash, channel)
+    PRIMARY KEY (source, notice_id, content_hash, lane, channel)
 );

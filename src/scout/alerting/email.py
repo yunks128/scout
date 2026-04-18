@@ -35,9 +35,9 @@ def send_daily(db: DB, only_if_changes: bool = True) -> SendResult:
     if not api_key:
         return SendResult(sent=False, reason="BUTTONDOWN_API_KEY not set")
 
-    rows = db.digest_rows(EMAIL_LANES)
+    rows = db.digest_rows(EMAIL_LANES, new_only=True, channel="email")
     if only_if_changes and not rows:
-        return SendResult(sent=False, reason="no act-now or review items today")
+        return SendResult(sent=False, reason="no new act-now or review items today")
 
     counts = lane_counts(rows, EMAIL_LANES)
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -67,6 +67,7 @@ def send_daily(db: DB, only_if_changes: bool = True) -> SendResult:
             log.error("Buttondown %s: %s", r.status_code, r.text[:1000])
             r.raise_for_status()
         data = r.json()
+    db.record_alerts_sent(rows, channel="email")
     return SendResult(sent=True, reason="ok", email_id=data.get("id"))
 
 
@@ -91,12 +92,6 @@ def _compose_body(rows, counts: dict[str, int], today: str) -> str:
         "**Power systems funding opportunities, surfaced and ranked daily.**",
         "",
         f"_{today} · {a} act-now · {r} review · [live dashboard →]({DASHBOARD_URL})_",
-        "",
-        "---",
-        "",
-        "🔴 **Act now** — high fit, FFRDC-eligible, deadline within 30 days.  ",
-        "🟡 **Review** — worth a human look; eligibility often needs confirming from the FOA text.  ",
-        "⚫ _Archive — filtered out by portfolio policy, not shown here._",
         "",
         "---",
         "",

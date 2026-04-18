@@ -25,7 +25,7 @@ def compute_lane(
     Rules (in priority order):
       1. FFRDC explicitly excluded → archive, regardless of technical fit.
       2. Relevance <= 3 → archive (not worth the pipeline noise).
-      3. High relevance + eligible (yes/as_partner) + deadline ≤30 days or unknown → act-now.
+      3. High relevance + eligible (yes/as_partner) + deadline ≤60 days or unknown → act-now.
       4. Everything else → review (includes the important "unclear" case, where a human
          needs to open the FOA to decide).
     """
@@ -35,7 +35,7 @@ def compute_lane(
         return "archive"
     if relevance_score >= 7 and ffrdc_eligible in ("yes", "as_partner"):
         days = _days_until(response_deadline)
-        if days is None or days <= 30:
+        if days is None or days <= 60:
             return "act-now"
     return "review"
 
