@@ -27,11 +27,6 @@ focus_areas:
   - Ground Support Equipment (EGSE) design, environmental test, reliability engineering
   - AI/ML applied to spacecraft power, autonomy, and electronics (ties into JEME workstream)
 
-current_workstreams:
-  - JEME (multi-agent AI platform)
-  - FAIMM
-  - MMGIS
-
 eligibility_posture: |
   JPL is a federally funded R&D center operated by Caltech for NASA. NASA
   solicitations (NSPIRES, STMD, STTR/SBIR subcontract pathways) are generally
