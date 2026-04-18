@@ -50,6 +50,10 @@ def send_daily(db: DB, only_if_changes: bool = True) -> SendResult:
         "subject": subject,
         "body": body_markdown,
         "email_type": "public",
+        # Buttondown's /v1/emails defaults to 'draft', which silently parks the
+        # email in the dashboard. 'about_to_send' queues it for immediate
+        # delivery to confirmed subscribers.
+        "status": "about_to_send",
     }
     headers = {"Authorization": f"Token {api_key}"}
     with httpx.Client(timeout=30.0) as client:
