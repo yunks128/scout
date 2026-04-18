@@ -9,6 +9,10 @@ on:
         description: "Include archive lane in digest"
         required: false
         default: "false"
+      send_email:
+        description: "Send the digest email to Buttondown subscribers"
+        required: false
+        default: "false"
 
 concurrency:
   group: scout-run
@@ -47,10 +51,10 @@ jobs:
           scout -v digest ${{ github.event.inputs.include_archive == 'true' && '--include-archive' || '' }}
 
       - name: Email digest via Buttondown
-        # Only the daily scheduled cron sends real email. Manual triggers
-        # (workflow_dispatch) stop at the digest + Pages deploy so we can
-        # iterate on content without waking subscribers up.
-        if: ${{ github.event_name == 'schedule' }}
+        # The daily scheduled cron always sends. Manual workflow_dispatch
+        # runs skip this by default — opt in with the send_email input when
+        # you specifically want to push a dispatch-triggered send.
+        if: ${{ github.event_name == 'schedule' || github.event.inputs.send_email == 'true' }}
         env:
           BUTTONDOWN_API_KEY: ${{ secrets.BUTTONDOWN_API_KEY }}
           SCOUT_DB_PATH: data/scout.db
