@@ -20,9 +20,10 @@ SEARCH_URL = "https://api.sam.gov/prod/opportunities/v2/search"
 class SamGovAdapter(Adapter):
     source = "sam.gov"
 
-    # Narrow NAICS set to the highest-signal codes only. With an SI-NONFED role
-    # and a shared daily quota, we cannot afford 14 requests per run × 6 runs.
-    CORE_NAICS = ["541715", "221118", "221121"]
+    # Narrow NAICS set to the highest-signal Section 345 codes. SI-NONFED role
+    # has a tight daily quota; pick space-vehicle + R&D + engineering services
+    # as the three that cover most 345-relevant SAM.gov postings.
+    CORE_NAICS = ["336414", "541715", "541330"]
 
     def __init__(self, lookback_days: int = 30, page_size: int = 100) -> None:
         self.lookback_days = lookback_days

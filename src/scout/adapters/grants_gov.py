@@ -19,13 +19,16 @@ FUNDING_CATEGORIES = ["ENG", "ST", "EN"]
 # Agencies that actually post energy R&D work.
 AGENCY_CODES = ["DOE", "DOD", "NSF", "DARPA", "USDA-NIFA", "NASA"]
 
-# Keyword filter applied server-side by Grants.gov's Search2. This narrows the
-# broad ENG|ST|EN funding categories from ~200 generic engineering notices down
-# to ~100 energy/power-adjacent ones that are worth the lexical-gate + LLM pass.
+# Keyword filter applied server-side by Grants.gov's Search2. Tuned for
+# Section 345 (spacecraft power, avionics, electronics) — biases toward
+# space-flight relevance while keeping broader "power" coverage so terrestrial
+# R&D with space crossover isn't missed entirely.
 KEYWORD_FILTER = (
-    "energy OR grid OR power OR nuclear OR hydrogen OR battery OR storage "
-    "OR solar OR wind OR geothermal OR microgrid OR inverter OR photovoltaic "
-    "OR decarbonization OR fusion OR transmission OR substation"
+    "spacecraft OR avionics OR photovoltaic OR \"solar array\" OR RTG "
+    "OR thermoelectric OR \"power electronics\" OR \"motor control\" "
+    "OR FPGA OR \"radiation hardened\" OR \"rad-hard\" OR \"flight electronics\" "
+    "OR battery OR \"energy storage\" OR lunar OR Mars OR CubeSat OR SmallSat "
+    "OR \"pulsed power\" OR \"in-space\" OR \"on-orbit\" OR propulsion"
 )
 
 

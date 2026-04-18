@@ -1,51 +1,116 @@
-# Lexical gate vocabulary. Each keyword contributes its weight to the lexical score
-# when it appears in title or description. Re-mine quarterly from recent DOE/NSF
-# awards and USAspending.gov.
+# Lexical gate vocabulary for JPL Section 345 scope: spacecraft power,
+# electronics, avionics, photovoltaics, thermoelectric/electrochemical systems.
+# A notice's lexical score must hit >= 3 to pass the gate and reach the LLM.
+# Re-mine quarterly from recent NSPIRES/STMD awards and DoD space-tech awards.
 
-core:
-  - { term: "grid resilience", weight: 3 }
-  - { term: "grid modernization", weight: 3 }
+core_space_power:
+  - { term: "solar array", weight: 4 }
+  - { term: "space photovoltaic", weight: 5 }
+  - { term: "photovoltaic", weight: 3 }
+  - { term: "multijunction solar", weight: 4 }
+  - { term: "RTG", weight: 5 }
+  - { term: "radioisotope thermoelectric", weight: 5 }
+  - { term: "thermoelectric generator", weight: 4 }
+  - { term: "thermoelectric", weight: 3 }
+  - { term: "spacecraft power", weight: 5 }
+  - { term: "space power", weight: 4 }
+  - { term: "lunar surface power", weight: 5 }
+  - { term: "fission surface power", weight: 5 }
+
+power_electronics:
+  - { term: "power electronics", weight: 4 }
+  - { term: "motor controller", weight: 4 }
+  - { term: "motor control", weight: 3 }
+  - { term: "DC-DC converter", weight: 4 }
+  - { term: "power converter", weight: 3 }
+  - { term: "power conversion", weight: 3 }
+  - { term: "pulsed power", weight: 4 }
+  - { term: "power management", weight: 2 }
+  - { term: "power distribution", weight: 2 }
+  - { term: "propulsion electronics", weight: 3 }
+  - { term: "pyrotechnic firing", weight: 3 }
+
+energy_storage:
+  - { term: "battery", weight: 3 }
+  - { term: "lithium-ion", weight: 3 }
   - { term: "energy storage", weight: 3 }
-  - { term: "battery", weight: 2 }
-  - { term: "power electronics", weight: 3 }
-  - { term: "microgrid", weight: 3 }
-  - { term: "inverter", weight: 2 }
-  - { term: "substation", weight: 2 }
-  - { term: "transmission", weight: 2 }
-  - { term: "distribution system", weight: 2 }
-  - { term: "smart grid", weight: 2 }
-  - { term: "demand response", weight: 2 }
-  - { term: "electric vehicle", weight: 1 }
-  - { term: "EV charging", weight: 2 }
-  - { term: "photovoltaic", weight: 2 }
-  - { term: "wind energy", weight: 2 }
-  - { term: "geothermal", weight: 2 }
-  - { term: "nuclear", weight: 2 }
-  - { term: "small modular reactor", weight: 3 }
-  - { term: "fusion", weight: 2 }
-  - { term: "hydrogen", weight: 2 }
-  - { term: "carbon capture", weight: 2 }
-  - { term: "industrial decarbonization", weight: 3 }
+  - { term: "electrochemical", weight: 3 }
+  - { term: "solid-state battery", weight: 4 }
+  - { term: "flywheel", weight: 2 }
 
-ai_for_energy:
-  - { term: "foundation model", weight: 3 }
-  - { term: "AI for energy", weight: 3 }
-  - { term: "machine learning", weight: 1 }
-  - { term: "digital twin", weight: 2 }
+avionics_electronics:
+  - { term: "avionics", weight: 4 }
+  - { term: "flight electronics", weight: 4 }
+  - { term: "spaceflight electronics", weight: 5 }
+  - { term: "FPGA", weight: 4 }
+  - { term: "field programmable gate array", weight: 4 }
+  - { term: "embedded system", weight: 2 }
+  - { term: "mixed signal", weight: 3 }
+  - { term: "ASIC", weight: 3 }
+  - { term: "command and data handling", weight: 4 }
+  - { term: "C&DH", weight: 4 }
+  - { term: "radiation hardened", weight: 5 }
+  - { term: "rad-hard", weight: 5 }
+  - { term: "radiation tolerant", weight: 4 }
+  - { term: "vision compute", weight: 3 }
+
+space_context:
+  - { term: "spacecraft", weight: 2 }
+  - { term: "space flight", weight: 2 }
+  - { term: "spaceflight", weight: 2 }
+  - { term: "on-orbit", weight: 2 }
+  - { term: "in-space", weight: 2 }
+  - { term: "lunar", weight: 2 }
+  - { term: "cislunar", weight: 3 }
+  - { term: "Mars", weight: 2 }
+  - { term: "CubeSat", weight: 3 }
+  - { term: "SmallSat", weight: 3 }
+  - { term: "small satellite", weight: 3 }
+  - { term: "deep space", weight: 2 }
+  - { term: "rover", weight: 2 }
+  - { term: "lander", weight: 2 }
+
+test_gse:
+  - { term: "ground support equipment", weight: 3 }
+  - { term: "EGSE", weight: 3 }
+  - { term: "environmental test", weight: 2 }
+  - { term: "reliability engineering", weight: 2 }
+  - { term: "integration and test", weight: 2 }
+
+ai_for_engineering:
+  - { term: "foundation model", weight: 2 }
   - { term: "physics-informed", weight: 2 }
+  - { term: "digital twin", weight: 2 }
   - { term: "autonomous control", weight: 2 }
   - { term: "anomaly detection", weight: 1 }
-  - { term: "predictive maintenance", weight: 2 }
+  - { term: "predictive maintenance", weight: 1 }
 
 agency_signals:
-  - { term: "DE-FOA", weight: 2 }
+  - { term: "NSPIRES", weight: 3 }
+  - { term: "STMD", weight: 3 }
+  - { term: "Space Technology Mission Directorate", weight: 3 }
+  - { term: "SBIR", weight: 2 }
+  - { term: "STTR", weight: 2 }
+  - { term: "AFRL", weight: 2 }
+  - { term: "SpaceWERX", weight: 3 }
   - { term: "ARPA-E", weight: 2 }
+  - { term: "DE-FOA", weight: 2 }
   - { term: "GENESIS", weight: 5 }
   - { term: "Genesis Mission", weight: 5 }
-  - { term: "Earthshot", weight: 3 }
+
+# Terrestrial-grid terms kept at low weight — marginally relevant, won't clear
+# the gate on their own but won't actively exclude either.
+adjacent_terrestrial:
+  - { term: "grid resilience", weight: 1 }
+  - { term: "grid modernization", weight: 1 }
+  - { term: "microgrid", weight: 1 }
+  - { term: "inverter", weight: 1 }
 
 exclusions:
-  # If any of these appear AND no core term appears, skip.
+  # Hard-exclude when present and no core term fires.
   - "healthcare"
   - "pharmaceutical"
   - "agriculture"
+  - "biomedical"
+  - "dissertation"
+  - "undergraduate research experience"

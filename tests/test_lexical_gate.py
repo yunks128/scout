@@ -32,8 +32,8 @@ def test_weak_match_fails():
 
 def test_naics_boost():
     r = score(
-        title="Electric power research",
+        title="Guided missile component R&D",
         description="",
-        naics="221121",
+        naics="336414",
     )
-    assert "NAICS:221121" in r.matches
+    assert "NAICS:336414" in r.matches

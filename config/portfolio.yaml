@@ -1,18 +1,54 @@
 # Strategic-fit context fed to the LLM classifier. Keep this tight — it's in the
 # system prompt on every classification call, so verbosity = $$.
+#
+# Scope is JPL Section 345 (Electronics, Power Systems and Technology), NASA's
+# technical center of excellence for advanced computing, motor control, advanced
+# power electronics, thermoelectric, electrochemical, and photovoltaic
+# technologies. Parent: Division 3400 Autonomous Systems. Charter: DocID 82918.
 
-organization: "JPL (FFRDC)"
+organization: "JPL Section 345 (Electronics, Power Systems and Technology)"
+
+section_scope: |
+  NASA's technical center of excellence for advanced computing, motor control,
+  advanced power electronics, thermoelectric, electrochemical, and photovoltaic
+  technologies. Space-flight focused: "power systems" means spacecraft power,
+  not terrestrial grid.
 
 focus_areas:
-  - Grid resilience and security, especially under extreme weather and cyber-physical threats
-  - AI/ML for power systems (foundation models, physics-informed ML, digital twins)
-  - Space-power / lunar-surface-power / radiation-hard power electronics
-  - Advanced energy storage systems and power conversion
-  - Autonomous control and anomaly detection for grid and microgrid operation
-  - Industrial decarbonization sensing and verification
-  - Nuclear and fusion diagnostics instrumentation
+  - Spacecraft power system architecture, subsystem design, verification, and flight delivery
+  - Solar arrays and space photovoltaics (flight hardware and new PV technology development)
+  - Power electronics — DC-DC converters, motor controllers, pulsed power for laser and radar instruments, propulsion and pyrotechnic firing
+  - Radioisotope Thermoelectric Generators (RTGs) and thermoelectric materials and devices
+  - Electrochemical energy storage (batteries) and energy storage materials for space
+  - Avionics hardware — command and data handling, motor control assemblies, integration and test
+  - Mixed-signal electronics — avionics compute, vision compute, motor control
+  - Flight FPGAs and embedded Level 7 (L7) systems
+  - Radiation-hard and high-reliability space electronics
+  - Ground Support Equipment (EGSE) design, environmental test, reliability engineering
+  - AI/ML applied to spacecraft power, autonomy, and electronics (ties into JEME workstream)
+
+current_workstreams:
+  - JEME (multi-agent AI platform)
+  - FAIMM
+  - MMGIS
+
+eligibility_posture: |
+  JPL is a federally funded R&D center operated by Caltech for NASA. NASA
+  solicitations (NSPIRES, STMD, STTR/SBIR subcontract pathways) are generally
+  open to JPL. DOE FOAs frequently restrict FFRDC primes or require an
+  FFRDC-partner model — treat FFRDC eligibility as a HARD GATE: if the FOA
+  excludes FFRDCs without a partner pathway, mark as 'archive' regardless of
+  technical fit. DoD space and technology BAAs (AFRL, ONR, DARPA, SpaceWERX)
+  vary by call — rely on the notice text, not conventions.
 
 preferred_roles:
-  - Prime when eligible and technically leading
-  - Subcontractor to a university or industry prime for FFRDC-restricted FOAs
+  - Prime on NASA solicitations when technically leading
+  - Subcontractor to a university or industry prime on FFRDC-restricted DOE FOAs
   - Team member on multi-institution consortia
+  - Technical lead or partner on DoD space-technology BAAs
+
+off_scope_examples:
+  - Terrestrial grid modernization (utility transmission, substation upgrades, demand response)
+  - Healthcare, pharmaceutical, agriculture, pure biology
+  - Industrial decarbonization of chemical plants
+  - Commercial energy products with no space / spacecraft tie-in

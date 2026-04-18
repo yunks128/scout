@@ -23,10 +23,14 @@ def score(title: str, description: str | None, naics: str | None = None, psc: st
     matches: list[str] = []
     total = 0.0
 
-    for bucket in ("core", "ai_for_energy", "agency_signals"):
-        for entry in kw.get(bucket, []):
+    # Iterate every bucket in keywords.yaml (except 'exclusions') so new
+    # categories don't have to be wired into code — just add a bucket.
+    for bucket_name, entries in kw.items():
+        if bucket_name == "exclusions" or not isinstance(entries, list):
+            continue
+        for entry in entries:
             term = entry["term"].lower()
-            if term in text:
+            if term in text.lower():
                 total += entry["weight"]
                 matches.append(entry["term"])
 
