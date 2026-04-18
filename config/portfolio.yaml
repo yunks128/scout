@@ -29,8 +29,12 @@ focus_areas:
 
 eligibility_posture: |
   JPL is a federally funded R&D center operated by Caltech for NASA. NASA
-  solicitations (NSPIRES, STMD, STTR/SBIR subcontract pathways) are generally
-  open to JPL. DOE FOAs frequently restrict FFRDC primes or require an
+  solicitations (NSPIRES, STMD) are generally open to JPL. SBIR/STTR rule
+  of thumb from the technologist: NASA SBIR/STTR — JPL cannot participate
+  (the program is for small businesses, and NASA-internal FFRDCs are
+  excluded); SBIR/STTR from other agencies (DOE, DoD, NSF, etc.) — JPL
+  can participate, typically as a research-institution partner to a small
+  business prime. DOE FOAs frequently restrict FFRDC primes or require an
   FFRDC-partner model — treat FFRDC eligibility as a HARD GATE: if the FOA
   excludes FFRDCs without a partner pathway, mark as 'archive' regardless of
   technical fit. DoD space and technology BAAs (AFRL, ONR, DARPA, SpaceWERX)
