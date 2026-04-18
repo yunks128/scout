@@ -12,12 +12,6 @@ focus_areas:
   - Industrial decarbonization sensing and verification
   - Nuclear and fusion diagnostics instrumentation
 
-eligibility_posture: |
-  JPL is a federally funded R&D center operated by Caltech for NASA. Many DOE
-  FOAs restrict FFRDC primes or require an FFRDC-partner model. Treat FFRDC
-  eligibility as a hard gate: if the FOA excludes FFRDCs without a partner
-  pathway, mark as 'archive' regardless of technical fit.
-
 preferred_roles:
   - Prime when eligible and technically leading
   - Subcontractor to a university or industry prime for FFRDC-restricted FOAs

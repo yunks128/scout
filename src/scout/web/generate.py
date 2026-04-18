@@ -238,7 +238,7 @@ footer a {{ color: var(--accent); }}
 <header class="site">
   <h1>SCOUT</h1>
   <p class="expansion">Solicitation &amp; Call Opportunity Understanding Tool</p>
-  <p class="sub">Early-warning for power &amp; energy funding opportunities · generated {generated} · sources: {sources}</p>
+  <p class="sub">Power systems funding opportunities, surfaced and ranked daily · generated {generated} · sources: {sources}</p>
 </header>
 <div class="counts">
   <div class="count actnow"><span class="num">{c_actnow}</span><span class="lbl">Act now</span></div>
