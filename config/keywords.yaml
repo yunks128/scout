@@ -16,6 +16,11 @@ core_space_power:
   - { term: "space power", weight: 4 }
   - { term: "lunar surface power", weight: 5 }
   - { term: "fission surface power", weight: 5 }
+  - { term: "solar cell", weight: 3 }
+  - { term: "perovskite", weight: 3 }
+  - { term: "high voltage", weight: 2 }
+  - { term: "direct energy conversion", weight: 4 }
+  - { term: "Peltier cooling", weight: 3 }   # thermoelectric Peltier effect
 
 power_electronics:
   - { term: "power electronics", weight: 4 }
@@ -37,6 +42,11 @@ energy_storage:
   - { term: "electrochemical", weight: 3 }
   - { term: "solid-state battery", weight: 4 }
   - { term: "flywheel", weight: 2 }
+  - { term: "supercapacitor", weight: 3 }
+  - { term: "ultracapacitor", weight: 3 }
+  - { term: "electrical double layer capacitor", weight: 3 }
+  - { term: "fuel cell", weight: 3 }
+  - { term: "hydrogen storage", weight: 3 }
 
 avionics_electronics:
   - { term: "avionics", weight: 4 }
@@ -69,6 +79,8 @@ space_context:
   - { term: "deep space", weight: 2 }
   - { term: "rover", weight: 2 }
   - { term: "lander", weight: 2 }
+  - { term: "planetary", weight: 2 }
+  - { term: "power generation", weight: 2 }
 
 test_gse:
   - { term: "ground support equipment", weight: 3 }
@@ -97,6 +109,20 @@ agency_signals:
   - { term: "DE-FOA", weight: 2 }
   - { term: "GENESIS", weight: 5 }
   - { term: "Genesis Mission", weight: 5 }
+  - { term: "NASA", weight: 2 }
+  - { term: "Science Mission Directorate", weight: 3 }
+  - { term: "ESDMD", weight: 3 }
+  - { term: "Exploration Systems Development Mission Directorate", weight: 3 }
+  - { term: "DEVCOM", weight: 2 }
+  - { term: "AFOSR", weight: 3 }
+  - { term: "Air Force Office of Scientific Research", weight: 3 }
+  - { term: "Army Research Laboratory", weight: 3 }
+  - { term: "ARL", weight: 2 }
+  - { term: "Office of Naval Research", weight: 3 }
+  - { term: "ONR", weight: 2 }
+  - { term: "DARPA", weight: 3 }
+  - { term: "IARPA", weight: 2 }
+  - { term: "DOE", weight: 1 }
 
 # Terrestrial-grid terms kept at low weight — marginally relevant, won't clear
 # the gate on their own but won't actively exclude either.
