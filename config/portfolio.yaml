@@ -25,7 +25,7 @@ focus_areas:
   - Flight FPGAs and embedded Level 7 (L7) systems
   - Radiation-hard and high-reliability space electronics
   - Ground Support Equipment (EGSE) design, environmental test, reliability engineering
-  - AI/ML applied to spacecraft power, autonomy, and electronics (ties into JEME workstream)
+  - AI/ML applied to spacecraft power, autonomy, and electronics
 
 eligibility_posture: |
   JPL is a federally funded R&D center operated by Caltech for NASA. NASA
