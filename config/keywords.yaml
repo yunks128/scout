@@ -109,7 +109,7 @@ agency_signals:
   - { term: "DE-FOA", weight: 2 }
   - { term: "GENESIS", weight: 5 }
   - { term: "Genesis Mission", weight: 5 }
-  - { term: "NASA", weight: 2 }
+  - { term: "NASA", weight: 1 }
   - { term: "Science Mission Directorate", weight: 3 }
   - { term: "ESDMD", weight: 3 }
   - { term: "Exploration Systems Development Mission Directorate", weight: 3 }
@@ -117,7 +117,7 @@ agency_signals:
   - { term: "AFOSR", weight: 3 }
   - { term: "Air Force Office of Scientific Research", weight: 3 }
   - { term: "Army Research Laboratory", weight: 3 }
-  - { term: "ARL", weight: 2 }
+  - { term: "ARL", weight: 1 }
   - { term: "Office of Naval Research", weight: 3 }
   - { term: "ONR", weight: 2 }
   - { term: "DARPA", weight: 3 }
