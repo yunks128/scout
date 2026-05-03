@@ -98,12 +98,20 @@ def _card(r: sqlite3.Row) -> str:
     ffrdc = r["ffrdc_eligible"] or "unclear"
     rel = r["llm_relevance"]
     rel_str = f"{rel}/10" if rel is not None else "—"
+    phase1 = r["preapp_deadline"] or ""
     deadline = r["response_deadline"] or "—"
     posted = r["posted_date"] or "—"
     agency = r["agency"] or "unknown"
     notes = html.escape(r["llm_fit_notes"] or "")
     quote = html.escape(r["eligibility_quote"] or "")
     url = r["url"] or "#"
+    if phase1:
+        deadline_html = (
+            f"<strong>Phase 1: {html.escape(phase1)}</strong>"
+            f" · Phase 2: {html.escape(deadline)}"
+        )
+    else:
+        deadline_html = f"<strong>Deadline {html.escape(deadline)}</strong>"
     return f"""
 <article class="card lane-{html.escape(r['lane'])}">
   <header>
@@ -114,7 +122,7 @@ def _card(r: sqlite3.Row) -> str:
   <h3><a href="{html.escape(url)}" target="_blank" rel="noopener">{html.escape(r['title'])}</a></h3>
   <p class="meta">
     <strong>{html.escape(r['notice_id'])}</strong> · {html.escape(agency)}<br>
-    Posted {html.escape(posted)} · <strong>Deadline {html.escape(deadline)}</strong>
+    Posted {html.escape(posted)} · {deadline_html}
   </p>
   {f'<p class="notes">{notes}</p>' if notes else ''}
   {f'<div class="pills">{theme_pills}</div>' if theme_pills else ''}

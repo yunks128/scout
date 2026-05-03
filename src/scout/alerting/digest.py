@@ -53,6 +53,15 @@ def lane_counts(rows, lanes) -> dict[str, int]:
     return counts
 
 
+def _deadline_line(r) -> str:
+    posted = r["posted_date"] or "—"
+    phase1 = r["preapp_deadline"]
+    final = r["response_deadline"] or "—"
+    if phase1:
+        return f"- **Posted**: {posted} · **Phase 1**: {phase1} · **Phase 2**: {final}"
+    return f"- **Posted**: {posted} · **Deadline**: {final}"
+
+
 def _format_row(r, verbose: bool) -> list[str]:
     themes = json.loads(r["llm_themes"] or "[]")
     matches = json.loads(r["lexical_matches"] or "[]")
@@ -60,7 +69,7 @@ def _format_row(r, verbose: bool) -> list[str]:
     meta = [
         f"- **Source**: {r['source']}",
         f"- **Agency**: {r['agency'] or 'unknown'}",
-        f"- **Posted**: {r['posted_date'] or '—'} · **Deadline**: {r['response_deadline'] or '—'}",
+        _deadline_line(r),
         f"- **URL**: {r['url'] or '—'}",
     ]
     if r["llm_relevance"] is not None:

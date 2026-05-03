@@ -64,6 +64,7 @@ def classify_unclassified(db: DB) -> tuple[int, int]:
             ffrdc_eligible=verdict.ffrdc_eligible,
             relevance_score=verdict.relevance_score,
             response_deadline=row["response_deadline"],
+            phase1_deadline=row["preapp_deadline"],
         )
         db.save_classification(
             Classification(
