@@ -38,6 +38,8 @@ def compute_lane(
         return "archive"
     if relevance_score >= 7 and ffrdc_eligible in ("yes", "as_partner"):
         days = _earliest_days(phase1_deadline, response_deadline)
+        if days is not None and days < 0:
+            return "archive"  # all known deadlines have passed
         if days is None or days <= 60:
             return "act-now"
     return "review"
@@ -49,20 +51,24 @@ def _earliest_days(
 ) -> int | None:
     """Return the days-until value for the nearest upcoming deadline.
 
-    If both are present, returns the smaller (sooner) positive value.
-    A past deadline (negative days) is ignored so it doesn't pull an
-    otherwise-future opportunity into act-now prematurely.
-    Returns None only when no deadline is known (treats as unknown → act-now).
+    Returns None when no deadline is known at all (→ act-now, treat as urgent).
+    Returns a negative sentinel (-1) when all provided deadlines are in the past
+    (→ caller should archive).
+    Otherwise returns the smallest non-negative value (soonest upcoming deadline).
     """
-    candidates = []
+    any_parsed = False
+    future: list[int] = []
     for dl in (phase1_deadline, response_deadline):
         d = _days_until(dl)
-        if d is not None and d >= 0:
-            candidates.append(d)
-    if not candidates:
-        # All provided deadlines were unparseable or both None → unknown
-        return None
-    return min(candidates)
+        if d is not None:
+            any_parsed = True
+            if d >= 0:
+                future.append(d)
+    if not any_parsed:
+        return None  # no deadline info at all → unknown
+    if not future:
+        return -1  # deadlines exist but all are past
+    return min(future)
 
 
 def _days_until(deadline: str | None) -> int | None:
