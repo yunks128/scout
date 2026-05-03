@@ -17,6 +17,12 @@ LISTING_URL = "https://science.osti.gov/grants/FOAs/Open"
 
 FOA_NUMBER_RE = re.compile(r"DE-FOA-\d{7}", re.IGNORECASE)
 
+# Matches "Phase I Applications: April 28, 2026" style deadline lines in notes text.
+PHASE1_RE = re.compile(
+    r"Phase\s+I\s+Applications?\s*:\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})",
+    re.IGNORECASE,
+)
+
 
 class DoeScAdapter(Adapter):
     """Scrape the DOE Office of Science open-FOA listing.
@@ -43,6 +49,7 @@ class DoeScAdapter(Adapter):
     def normalize(self, notice_id: str, payload: dict[str, Any], content_hash: str) -> Notice | None:
         title = payload.get("title") or notice_id
         description = _description_text(payload)
+        notes = payload.get("notes") or ""
         return Notice(
             source=self.source,
             notice_id=notice_id,
@@ -52,6 +59,7 @@ class DoeScAdapter(Adapter):
             description=description,
             posted_date=payload.get("post_date"),
             response_deadline=payload.get("close_date"),
+            preapp_deadline=_extract_phase1(notes),
             url=payload.get("detail_url") or LISTING_URL,
             last_modified=payload.get("updated"),
         )
@@ -98,6 +106,11 @@ def _after_label(art: Node, selector: str) -> str | None:
     full = block.text(separator=" ", strip=True)
     stripped = _LABEL_RE.sub("", full).strip()
     return stripped or None
+
+
+def _extract_phase1(notes: str) -> str | None:
+    m = PHASE1_RE.search(notes)
+    return m.group(1) if m else None
 
 
 def _description_text(payload: dict[str, Any]) -> str:
