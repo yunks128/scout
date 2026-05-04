@@ -25,6 +25,8 @@ ffrdc_eligible — pick exactly one:
 - "yes": the notice explicitly invites FFRDCs (or all R&D institutions including national labs) as primes.
 - "unclear": the notice text is silent on FFRDC/national-lab eligibility. DO NOT guess from program name or conventions — silence means "unclear", which routes to human review.
 
+Critical: Phase I / Phase II deadline structure is NOT evidence of SBIR/STTR. DOE Office of Science and other agencies routinely use Phase I/II labels for open FOAs available to all eligible entities. Only mark "no" if the notice body explicitly restricts applicants to small businesses or explicitly excludes FFRDCs/national labs.
+
 Same discipline for cost_share and foreign_entity: default to "unclear" when the text is silent.
 
 Do not assign the lane. Scout's downstream applies portfolio policy to (relevance_score, ffrdc_eligible, deadline) to decide act-now / review / archive. You only fill in dimensions.
