@@ -25,6 +25,16 @@ class SamGovAdapter(Adapter):
     # as the three that cover most 345-relevant SAM.gov postings.
     CORE_NAICS = ["336414", "541715", "541330"]
 
+    # Agencies that publish Proposer's Days and pre-BAA notices as Special
+    # Notices or Presolicitations. These notices frequently have no NAICS code,
+    # so NAICS-filtered queries miss them entirely.
+    PREREQ_AGENCIES = ["DARPA", "AFOSR", "ONR", "ARL"]
+
+    # SAM.gov ptype codes for pre-solicitation signals.
+    # s = Special Notice (Proposer's Days, industry days, pre-BAA)
+    # p = Presolicitation
+    PREREQ_PTYPES = ["s", "p"]
+
     def __init__(self, lookback_days: int = 30, page_size: int = 100) -> None:
         self.lookback_days = lookback_days
         self.page_size = page_size
@@ -38,27 +48,51 @@ class SamGovAdapter(Adapter):
         start = end - timedelta(days=self.lookback_days)
         with httpx.Client(timeout=30.0) as client:
             for ncode in self.CORE_NAICS:
-                stop, hits = self._paginate(client, start, end, ncode)
+                stop, hits = self._paginate(client, start, end, ncode=ncode)
                 yield from hits
                 if stop:
                     log.warning("SAM.gov quota exhausted; stopping all ingestion")
                     return
 
+            # Second pass: scan for Special Notices and Presolicitations from
+            # high-value agencies. These pre-BAA signals lack NAICS codes and
+            # would be invisible to the NAICS-only queries above.
+            for agency in self.PREREQ_AGENCIES:
+                for ptype in self.PREREQ_PTYPES:
+                    stop, hits = self._paginate(
+                        client, start, end, ptype=ptype, keyword=agency
+                    )
+                    yield from hits
+                    if stop:
+                        log.warning("SAM.gov quota exhausted; stopping all ingestion")
+                        return
+
     def _paginate(
-        self, client: httpx.Client, start, end, ncode: str
+        self,
+        client: httpx.Client,
+        start,
+        end,
+        ncode: str | None = None,
+        ptype: str | None = None,
+        keyword: str | None = None,
     ) -> tuple[bool, list[tuple[str, dict]]]:
         """Return (hard_stop, results). hard_stop=True on 429 so the outer loop bails."""
         out: list[tuple[str, dict]] = []
         offset = 0
         while True:
-            params = {
+            params: dict[str, Any] = {
                 "api_key": self.api_key,
                 "postedFrom": start.strftime("%m/%d/%Y"),
                 "postedTo": end.strftime("%m/%d/%Y"),
-                "ncode": ncode,
                 "limit": self.page_size,
                 "offset": offset,
             }
+            if ncode:
+                params["ncode"] = ncode
+            if ptype:
+                params["ptype"] = ptype
+            if keyword:
+                params["keyword"] = keyword
             r = client.get(SEARCH_URL, params=params)
             if r.status_code == 429:
                 log.warning("SAM.gov 429 on NAICS %s", ncode)

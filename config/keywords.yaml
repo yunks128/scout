@@ -4,6 +4,8 @@
 # Re-mine quarterly from recent NSPIRES/STMD awards and DoD space-tech awards.
 
 core_space_power:
+  - { term: "power", weight: 2 }
+  - { term: "energy", weight: 2 }
   - { term: "solar array", weight: 4 }
   - { term: "space photovoltaic", weight: 5 }
   - { term: "photovoltaic", weight: 3 }
@@ -96,6 +98,19 @@ ai_for_engineering:
   - { term: "autonomous control", weight: 2 }
   - { term: "anomaly detection", weight: 1 }
   - { term: "predictive maintenance", weight: 1 }
+
+solicitation_signals:
+  # Pre-solicitation event types that appear in notice titles. Proposers Days
+  # and pre-BAA announcements often have no description text (SAM.gov enrichment
+  # fails when quota is exhausted), so title-level signals must carry the gate.
+  - { term: "Proposers Day", weight: 4 }
+  - { term: "Proposer's Day", weight: 4 }
+  - { term: "pre-BAA", weight: 3 }
+  - { term: "Broad Agency Announcement", weight: 3 }
+  - { term: "BAA", weight: 3 }
+  - { term: "industry day", weight: 2 }
+  - { term: "Request for Information", weight: 2 }
+  - { term: "RFI", weight: 2 }
 
 agency_signals:
   - { term: "NSPIRES", weight: 3 }
