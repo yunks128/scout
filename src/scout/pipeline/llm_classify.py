@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are Scout, an analyst at JPL screening federal funding opportunities for fit with JPL's power and energy portfolio.
 
-JPL is an FFRDC. FFRDC eligibility is a HARD GATE per the portfolio's eligibility_posture — many DOE FOAs restrict FFRDC primes or require an FFRDC-partner pathway. Your eligibility call has to be accurate because downstream policy archives any FOA you mark 'no'.
+JPL is an FFRDC. FFRDC eligibility is a HARD GATE per the portfolio's eligibility_posture — many FOAs restrict FFRDC primes or require an FFRDC-partner pathway. Your eligibility call has to be accurate because downstream policy archives any FOA you mark 'no'.
 
 Rules for each field:
 
@@ -24,6 +24,13 @@ ffrdc_eligible — pick exactly one:
 - "as_partner": the notice allows FFRDCs only as subawardees, team members, or partners on a non-FFRDC prime. Quote the enabling language.
 - "yes": the notice explicitly invites FFRDCs (or all R&D institutions including national labs) as primes.
 - "unclear": the notice text is silent on FFRDC/national-lab eligibility. DO NOT guess from program name or conventions — silence means "unclear", which routes to human review.
+
+CRITICAL — eligibility from text only, never training knowledge:
+- You MUST NOT use your training knowledge about typical agency practices, historical policies, or program conventions.
+- "All responsible sources may submit" is standard government boilerplate. It does NOT establish FFRDC eligibility. Treat it as silence → "unclear".
+- Many solicitations (especially DARPA RSOs, BAAs) restrict FFRDCs only in attached documents not visible here. When the body text is silent, mark "unclear".
+- The eligibility_quote field MUST be a verbatim excerpt copied from the notice text provided. Never write sentences that begin with "Historically," "Typically," "Generally," "Normally," or "By convention" — those are training knowledge, which is forbidden as evidence.
+- If you cannot find explicit FFRDC eligibility language in the provided text, set ffrdc_eligible to "unclear" and leave eligibility_quote empty.
 
 Critical: Phase I / Phase II deadline structure is NOT evidence of SBIR/STTR. DOE Office of Science and other agencies routinely use Phase I/II labels for open FOAs available to all eligible entities. Only mark "no" if the notice body explicitly restricts applicants to small businesses or explicitly excludes FFRDCs/national labs.
 
@@ -73,6 +80,53 @@ class LLMVerdict:
     eligibility_quote: str
 
 
+# Keywords that signal eligibility-relevant paragraphs buried deep in attachment text.
+_ELIGIBILITY_KEYWORDS = (
+    "ffrdc",
+    "federally funded research",
+    "uarc",
+    "university-affiliated research center",
+    "eligible to propose",
+    "not eligible",
+    "ineligible",
+    "eligibility",
+    "prohibited from",
+    "small business",
+    "sbir",
+    "sttr",
+    "ffrdc prime",
+    "national laborator",
+)
+
+
+def _smart_excerpt(text: str, head_chars: int = 5000, tail_chars: int = 3000) -> str:
+    """Return up to head_chars + tail_chars chars that maximize eligibility signal.
+
+    The head is always the first head_chars chars (notice body / attachment start).
+    The tail is built from paragraphs containing eligibility keywords found only in
+    the text BEYOND the head, so we don't recycle content already visible and so
+    FFRDC restrictions buried deep in a PDF attachment are still surfaced.
+    """
+    if len(text) <= head_chars + tail_chars:
+        return text
+    head = text[:head_chars]
+    # Scan only past the head so the tail adds genuinely new content.
+    important: list[str] = []
+    seen: set[str] = set()
+    for para in text[head_chars:].split("\n"):
+        stripped = para.strip()
+        if not stripped or stripped in seen:
+            continue
+        lower = stripped.lower()
+        if any(kw in lower for kw in _ELIGIBILITY_KEYWORDS):
+            seen.add(stripped)
+            important.append(stripped)
+    tail = "\n".join(important)[:tail_chars]
+    if tail:
+        return head + "\n\n[...eligibility excerpts from full text...]\n\n" + tail
+    return head
+
+
 _client_cache: genai.Client | None = None
 
 
@@ -96,7 +150,7 @@ def classify(
     deadline: str | None,
     url: str | None,
 ) -> LLMVerdict:
-    desc = (description or "")[:8000]
+    desc = _smart_excerpt(description or "", head_chars=5000, tail_chars=3000)
     user_msg = USER_TEMPLATE.format(
         portfolio_yaml=yaml.safe_dump(portfolio(), sort_keys=False).strip(),
         source=source,
