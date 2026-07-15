@@ -9,6 +9,7 @@ from scout.adapters.grants_gov import GrantsGovAdapter
 from scout.adapters.sam_gov import SamGovAdapter
 from scout.alerting.digest import write_digest
 from scout.alerting.email import send_daily
+from scout.config import load_env
 from scout.pipeline import classify_unclassified
 from scout.storage.db import DB
 from scout.web.generate import build as build_site
@@ -23,6 +24,7 @@ ADAPTERS = {
 @click.group()
 @click.option("--verbose", "-v", is_flag=True)
 def main(verbose: bool) -> None:
+    load_env()
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s — %(message)s",
