@@ -5,9 +5,8 @@ import logging
 import os
 from dataclasses import dataclass
 
+import anthropic
 import yaml
-from google import genai
-from google.genai import types
 
 from scout.config import llm_model, portfolio
 
@@ -127,16 +126,43 @@ def _smart_excerpt(text: str, head_chars: int = 5000, tail_chars: int = 3000) ->
     return head
 
 
-_client_cache: genai.Client | None = None
+# Mirrors the schema spelled out in USER_TEMPLATE; structured outputs guarantee
+# the response parses.
+_VERDICT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "relevance_score": {"type": "integer"},
+        "matched_themes": {"type": "array", "items": {"type": "string"}},
+        "strategic_fit_notes": {"type": "string"},
+        "ffrdc_eligible": {"type": "string", "enum": ["yes", "no", "as_partner", "unclear"]},
+        "cost_share": {"type": "string", "enum": ["required", "not_required", "unclear"]},
+        "foreign_entity": {"type": "string", "enum": ["restricted", "allowed", "unclear"]},
+        "eligibility_quote": {"type": "string"},
+    },
+    "required": [
+        "relevance_score",
+        "matched_themes",
+        "strategic_fit_notes",
+        "ffrdc_eligible",
+        "cost_share",
+        "foreign_entity",
+        "eligibility_quote",
+    ],
+    "additionalProperties": False,
+}
+
+_client_cache: anthropic.AnthropicBedrockMantle | None = None
 
 
-def _client() -> genai.Client:
+def _client() -> anthropic.AnthropicBedrockMantle:
+    """Claude on Amazon Bedrock, authenticated with a Bedrock API key."""
     global _client_cache
     if _client_cache is None:
-        key = os.environ.get("GEMINI_API_KEY")
-        if not key:
-            raise RuntimeError("GEMINI_API_KEY not set")
-        _client_cache = genai.Client(api_key=key)
+        if not os.environ.get("AWS_BEARER_TOKEN_BEDROCK"):
+            raise RuntimeError("AWS_BEARER_TOKEN_BEDROCK not set")
+        _client_cache = anthropic.AnthropicBedrockMantle(
+            aws_region=os.environ.get("AWS_REGION", "us-east-1")
+        )
     return _client_cache
 
 
@@ -162,17 +188,21 @@ def classify(
         url=url or "",
         description=desc or "(no description available)",
     )
-    resp = _client().models.generate_content(
+    resp = _client().messages.create(
         model=llm_model(),
-        contents=user_msg,
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            response_mime_type="application/json",
-            temperature=0.2,
-            max_output_tokens=1024,
-        ),
+        max_tokens=16000,
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": user_msg}],
+        output_config={
+            "effort": "medium",
+            "format": {"type": "json_schema", "schema": _VERDICT_SCHEMA},
+        },
     )
-    data = _parse_json(resp.text or "")
+    if resp.stop_reason in ("refusal", "max_tokens"):
+        # Raise so the caller skips saving and the notice is retried next run.
+        raise RuntimeError(f"classify stopped with {resp.stop_reason} ({resp._request_id})")
+    text = next((b.text for b in resp.content if b.type == "text"), "")
+    data = _parse_json(text)
     return LLMVerdict(
         relevance_score=int(data.get("relevance_score", 0)),
         matched_themes=list(data.get("matched_themes") or []),

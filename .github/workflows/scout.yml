@@ -42,7 +42,8 @@ jobs:
 
       - name: Ingest + classify + digest
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          AWS_BEARER_TOKEN_BEDROCK: ${{ secrets.AWS_BEARER_TOKEN_BEDROCK }}
+          AWS_REGION: us-east-1
           SAM_GOV_API_KEY: ${{ secrets.SAM_GOV_API_KEY }}
           SCOUT_DB_PATH: data/scout.db
         run: |
