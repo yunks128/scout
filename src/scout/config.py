@@ -51,4 +51,4 @@ def portfolio() -> dict:
 
 
 def llm_model() -> str:
-    return os.environ.get("SCOUT_LLM_MODEL", "anthropic.claude-opus-5-5")
+    return os.environ.get("SCOUT_LLM_MODEL", "anthropic.claude-sonnet-5")

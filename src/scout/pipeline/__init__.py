@@ -81,13 +81,15 @@ def _try_fetch_sam_description(url: str) -> str | None:
         return None
 
 
-def classify_unclassified(db: DB) -> tuple[int, int]:
+def classify_unclassified(db: DB, rows: list | None = None) -> tuple[int, int]:
     """Run lexical gate then LLM classifier on every notice without a classification row.
 
+    Pass rows to (re)classify a specific set instead; existing verdicts are replaced.
     Returns (num_seen, num_llm_called). The delta is notices that failed the lexical gate
     and got an archive lane without spending LLM tokens.
     """
-    rows = db.unclassified()
+    if rows is None:
+        rows = db.unclassified()
     seen = 0
     llm_calls = 0
     for row in rows:
@@ -168,3 +170,33 @@ def classify_unclassified(db: DB) -> tuple[int, int]:
             )
         )
     return seen, llm_calls
+
+
+def refresh_lanes(db: DB) -> int:
+    """Re-apply eligibility validation and lane policy to stored verdicts, without the LLM.
+
+    Lanes depend on today's date (passed deadlines archive), so they go stale if only
+    computed at classification time. This also scrubs fabricated eligibility quotes
+    saved before _validate_verdict existed. Returns the number of rows changed.
+    """
+    changed = 0
+    for row in db.latest_llm_classified():
+        ffrdc = row["ffrdc_eligible"] or "unclear"
+        quote = row["eligibility_quote"] or ""
+        lower = quote.lower()
+        if ffrdc in ("yes", "as_partner") and (
+            not quote or any(m in lower for m in _HALLUCINATION_MARKERS)
+        ):
+            ffrdc, quote = "unclear", ""
+        new_lane = lane.compute_lane(
+            ffrdc_eligible=ffrdc,
+            relevance_score=row["llm_relevance"],
+            response_deadline=row["response_deadline"],
+            phase1_deadline=row["preapp_deadline"],
+        )
+        if (ffrdc, quote, new_lane) != (
+            row["ffrdc_eligible"], row["eligibility_quote"] or "", row["lane"]
+        ):
+            db.update_eligibility_and_lane(row, ffrdc, quote, new_lane)
+            changed += 1
+    return changed

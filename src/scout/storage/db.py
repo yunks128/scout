@@ -140,6 +140,39 @@ class DB:
                 )
             )
 
+    def latest_llm_classified(self, classified_before: str | None = None) -> list[sqlite3.Row]:
+        """Latest-version notices that went through the LLM, joined with their verdict."""
+        clause = " AND c.classified_at < ?" if classified_before else ""
+        params = [classified_before] if classified_before else []
+        with self.connect() as conn:
+            return list(
+                conn.execute(
+                    "SELECT n.*, c.llm_relevance, c.ffrdc_eligible, c.eligibility_quote, c.lane "
+                    "FROM notices n "
+                    "JOIN classifications c USING(source, notice_id, content_hash) "
+                    "JOIN (SELECT source, notice_id, MAX(last_seen_at) AS latest "
+                    "      FROM notices GROUP BY source, notice_id) latest "
+                    "  ON n.source=latest.source AND n.notice_id=latest.notice_id "
+                    " AND n.last_seen_at=latest.latest "
+                    f"WHERE c.llm_relevance IS NOT NULL{clause}",
+                    params,
+                )
+            )
+
+    def update_eligibility_and_lane(
+        self, row, ffrdc_eligible: str, eligibility_quote: str, lane: str
+    ) -> None:
+        """Rewrite derived fields in place; classified_at is left alone."""
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE classifications SET ffrdc_eligible=?, eligibility_quote=?, lane=? "
+                "WHERE source=? AND notice_id=? AND content_hash=?",
+                (
+                    ffrdc_eligible, eligibility_quote, lane,
+                    row["source"], row["notice_id"], row["content_hash"],
+                ),
+            )
+
     def save_classification(self, c: Classification) -> None:
         with self.connect() as conn:
             conn.execute(

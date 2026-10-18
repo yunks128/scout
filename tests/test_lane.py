@@ -31,3 +31,7 @@ def test_unclear_eligibility_goes_to_review():
 
 def test_high_relevance_but_far_deadline_is_review():
     assert compute_lane(ffrdc_eligible="yes", relevance_score=8, response_deadline=_future(90)) == "review"
+
+
+def test_unclear_eligibility_with_passed_deadline_archives():
+    assert compute_lane(ffrdc_eligible="unclear", relevance_score=8, response_deadline=_future(-3)) == "archive"

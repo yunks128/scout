@@ -30,7 +30,7 @@ Five stages, each swappable:
 
 1. **Ingestion** — one adapter per source writes raw payloads to `raw_notices`
 2. **Normalization** — canonical schema keyed by `(source, notice_id)` with amendment hash
-3. **Relevance** — cheap lexical gate (keywords + NAICS/PSC) then Claude Opus 5.5 (Amazon Bedrock) classifier for gate-passers
+3. **Relevance** — cheap lexical gate (keywords + NAICS/PSC) then Claude Sonnet 5 (Amazon Bedrock) classifier for gate-passers
 4. **Eligibility** — FFRDC yes/no/partner/unclear, cost share, foreign entity restrictions
 5. **Alerting** — three lanes (act-now / review / archive) as markdown digest
 

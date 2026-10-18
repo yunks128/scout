@@ -11,7 +11,7 @@ from scout.adapters.sam_gov import SamGovAdapter
 from scout.alerting.digest import write_digest
 from scout.alerting.email import send_daily
 from scout.config import load_env
-from scout.pipeline import classify_unclassified
+from scout.pipeline import _SAM_DESC_URL_PREFIX, classify_unclassified, refresh_lanes
 from scout.storage.db import DB
 from scout.web.generate import build as build_site
 
@@ -69,6 +69,26 @@ def classify() -> None:
     db = DB()
     seen, llm = classify_unclassified(db)
     click.echo(f"classified seen={seen} llm_calls={llm}")
+    click.echo(f"lanes refreshed changed={refresh_lanes(db)}")
+
+
+@main.command()
+@click.option("--before", required=True, help="Redo LLM verdicts made before this ISO date.")
+@click.option(
+    "--include-url-only",
+    is_flag=True,
+    help="Also redo SAM.gov notices whose description text was never fetched.",
+)
+def reclassify(before: str, include_url_only: bool) -> None:
+    """Re-run the LLM classifier on older verdicts (e.g. after a model change)."""
+    db = DB()
+    rows = db.latest_llm_classified(classified_before=before)
+    if not include_url_only:
+        # Without the body text the model only sees a title and would score it blind.
+        rows = [r for r in rows if not (r["description"] or "").startswith(_SAM_DESC_URL_PREFIX)]
+    seen, llm = classify_unclassified(db, rows)
+    click.echo(f"reclassified seen={seen} llm_calls={llm}")
+    click.echo(f"lanes refreshed changed={refresh_lanes(db)}")
 
 
 @main.command()
