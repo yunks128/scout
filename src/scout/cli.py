@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 
 import click
 
@@ -37,10 +38,29 @@ def ingest(sources: tuple[str, ...]) -> None:
     """Fetch from all configured sources (or a subset) and store notices."""
     db = DB()
     chosen = sources or tuple(ADAPTERS.keys())
+    # One broken source (expired key, site redesign) shouldn't block the digest
+    # for the others. Failures surface as GitHub Actions warning annotations.
+    failed: list[str] = []
     for name in chosen:
-        adapter = ADAPTERS[name]()
-        total, new = adapter.run(db)
+        try:
+            total, new = ADAPTERS[name]().run(db)
+        except Exception as e:
+            logging.getLogger(__name__).exception("[%s] ingest failed", name)
+            _warn(f"Ingest failed for {name}", f"{type(e).__name__}: {e}")
+            failed.append(name)
+            continue
         click.echo(f"[{name}] total={total} new_or_amended={new}")
+    if failed and len(failed) == len(chosen):
+        raise click.ClickException(f"all sources failed: {', '.join(failed)}")
+
+
+def _warn(title: str, message: str) -> None:
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        # Workflow commands are line-oriented; escape per the Actions spec.
+        msg = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+        click.echo(f"::warning title={title}::{msg}")
+    else:
+        click.echo(f"WARNING: {title}: {message}", err=True)
 
 
 @main.command()

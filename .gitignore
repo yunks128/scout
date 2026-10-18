@@ -5,6 +5,8 @@ __pycache__/
 venv/
 .env
 .env.local
+.env.*
+!.env.example
 *.db-journal
 *.db-wal
 *.db-shm
