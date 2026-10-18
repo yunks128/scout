@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from typing import Any
 
 import httpx
-from selectolax.parser import HTMLParser, Node
+from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from scout.adapters.base import Adapter
 from scout.storage.db import Notice
@@ -38,7 +38,7 @@ class DoeScAdapter(Adapter):
         with httpx.Client(timeout=30.0, follow_redirects=True) as client:
             r = client.get(LISTING_URL, headers={"User-Agent": "scout/0.1 (+github.com/yunks128/scout)"})
             r.raise_for_status()
-            tree = HTMLParser(r.text)
+            tree = LexborHTMLParser(r.text)
             for art in tree.css("article.funding_preview"):
                 payload = _parse_article(art)
                 notice_id = payload.get("foa_number")
@@ -65,7 +65,7 @@ class DoeScAdapter(Adapter):
         )
 
 
-def _parse_article(art: Node) -> dict[str, Any]:
+def _parse_article(art: LexborNode) -> dict[str, Any]:
     title_link = art.css_first("h3.title a")
     title = (title_link.text(strip=True) if title_link else "") or ""
     detail_href = title_link.attributes.get("href") if title_link else None
@@ -99,7 +99,7 @@ def _parse_article(art: Node) -> dict[str, Any]:
 _LABEL_RE = re.compile(r"^\s*(?:Announcement Number|Fiscal Year|Post Date|Close Date|Modification Date)\s*:\s*", re.I)
 
 
-def _after_label(art: Node, selector: str) -> str | None:
+def _after_label(art: LexborNode, selector: str) -> str | None:
     block = art.css_first(selector)
     if not block:
         return None
